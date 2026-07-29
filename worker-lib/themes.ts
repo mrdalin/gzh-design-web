@@ -24,8 +24,8 @@ export function parseThemes(md: string = THEME_INDEX_MD): ThemeInfo[] {
     themes.push({
       id,
       name,
-      mainColor: m[2].trim(),
-      scenario: m[3].trim(),
+      mainColor: extractHex(m[2]),
+      scenario: m[3].trim().replace(/`/g, ''),
       componentFile: compFile,
       underlineCss: m[5].trim().replace(/`/g, ''),
     });
@@ -48,4 +48,11 @@ export function getThemeComponentLib(themeId: string): string {
 // 取得通用增量库（代码块/图片/小标签，所有主题共用）。
 export function getCommonComponents(): string {
   return REFERENCES['common-components.md'] || '';
+}
+
+// 主题主色单元格形如 `#059669` emerald，这里只取第一个十六进制色值。
+function extractHex(cell: string): string {
+  const m = cell.match(/#[0-9a-fA-F]{3,8}/);
+  if (m) return m[0];
+  return cell.replace(/`/g, '').trim();
 }
