@@ -1,0 +1,140 @@
+:root {
+  --gzh-max-width: 680px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--semi-color-bg-0);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+}
+
+#root {
+  height: 100%;
+}
+
+/* 公众号预览容器：模拟手机宽度，居中 */
+.preview-frame {
+  max-width: var(--gzh-max-width);
+  margin: 0 auto;
+  padding: 16px 12px 48px;
+  background: #fff;
+  min-height: 100%;
+  overflow-x: hidden;
+}
+
+.preview-frame img {
+  max-width: 100% !important;
+  height: auto;
+}
+
+/* 让预览里的长链接换行，避免撑破手机版式 */
+.preview-frame a {
+  word-break: break-all;
+}
+
+/* 历史列表项 */
+.history-item {
+  border: 1px solid var(--semi-color-border);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.history-item:hover {
+  border-color: var(--semi-color-primary);
+}
+.history-item.selected {
+  border-color: var(--semi-color-primary);
+  background: var(--semi-color-primary-light-default);
+}
+
+.history-snippet {
+  color: var(--semi-color-text-2);
+  font-size: 12px;
+  margin-top: 6px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* 顶部标题栏 */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  height: 56px;
+  border-bottom: 1px solid var(--semi-color-border);
+  background: var(--semi-color-bg-1);
+}
+
+.app-logo {
+  font-weight: 700;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-shell {
+  height: calc(100% - 56px);
+}
+
+/* 输入框聚焦时不溢出 */
+.semi-input-textarea {
+  width: 100%;
+}
+
+.theme-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.theme-card {
+  border: 1px solid var(--semi-color-border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+}
+.theme-card:hover {
+  border-color: var(--semi-color-primary);
+}
+.theme-card.active {
+  border-color: var(--semi-color-primary);
+  box-shadow: 0 0 0 2px var(--semi-color-primary-light-default);
+}
+.theme-card .theme-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+.theme-card .theme-name {
+  font-weight: 600;
+}
+.theme-card .theme-scenario {
+  color: var(--semi-color-text-2);
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+.field-order-hint {
+  color: var(--semi-color-text-2);
+  font-size: 12px;
+  margin-bottom: 8px;
+}

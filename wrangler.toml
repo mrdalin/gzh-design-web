@@ -1,0 +1,11 @@
+name = "gzh-design-web"
+pages_build_output_dir = "dist"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+# 说明：
+# - 本项目前端构建产物在 dist/，API 在 functions/（Cloudflare Pages Functions）。
+# - 本地开发：npm run build && wrangler pages dev
+# - 部署：在 Cloudflare Pages 控制台连接本仓库（Git 集成），生产分支 main，
+#   构建命令 `npm run build`，输出目录 `dist`。push main 即自动构建发布。
+# - 本项目采用 BYOK（用户自带 API key），因此无需配置任何服务端密钥。

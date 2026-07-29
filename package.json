@@ -1,0 +1,32 @@
+{
+  "name": "gzh-design-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "license": "AGPL-3.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "build:assets": "node scripts/build-assets.mjs",
+    "preview": "vite preview",
+    "pages:dev": "npm run build && wrangler pages dev",
+    "deploy": "npm run build && wrangler pages deploy",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@douyinfe/semi-icons": "^2.67.0",
+    "@douyinfe/semi-ui": "^2.67.0",
+    "jszip": "^3.10.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240923.0",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "typescript": "^5.5.4",
+    "vite": "^5.4.2",
+    "wrangler": "^3.78.0"
+  }
+}
