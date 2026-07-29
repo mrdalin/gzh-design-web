@@ -36,29 +36,27 @@ npm run dev
 > `export NODE_OPTIONS='--use-system-ca'`（去掉其中的 `--require ...safe-delete` 注入）
 > 后再构建。CI / Cloudflare 构建环境不受影响。
 
-## 部署（Cloudflare Pages）
+## 部署（Cloudflare Pages，GitHub Actions 自动发布）
 
-**方式 A：Git 自动构建（推荐）**
+本项目通过 GitHub Actions（`.github/workflows/deploy.yml`）在每次 push 到 `main` 时
+自动构建并部署到 Cloudflare Pages，Cloudflare 凭证只存放在仓库的 **Actions secrets**，
+不进代码、也不需要交给任何人。
 
 1. 把本仓库推到 GitHub（公开仓，满足 AGPL 源码开放义务）。
-2. Cloudflare Pages 控制台「Create from Git」连接该仓库，生产分支 `main`，
-   构建命令 `npm run build`，输出目录 `dist`。
-3. 此后 `git push main` 即自动构建并发布。
-4. 本项目为 BYOK，无需在 Cloudflare 配置任何服务端密钥。
+2. 在 Cloudflare 控制台创建一个 **API Token**，权限勾选 `Cloudflare Pages: Edit`
+   （以及账号级 `Account: Cloudflare Pages` 读权限），并记录你的 **Account ID**
+   （Cloudflare 控制台地址栏 `dash.cloudflare.com/<account_id>/...`）。
+3. 在仓库 `Settings → Secrets and variables → Actions → Repository secrets` 新增两条：
+   - `CLOUDFLARE_API_TOKEN` = 上面的 API Token
+   - `CLOUDFLARE_ACCOUNT_ID` = 你的 Account ID
+4. push 到 `main` 即触发部署；之后每次 push 自动更新。若首次 push 时还没填 secret，
+   可在填好后到 `Actions` 页面对该次运行点「Re-run jobs」。
 
-**方式 B：直接部署（无需连 Git）**
-
-```bash
-npm install
-npm run build:assets   # 已提交 skillAssets.ts 可跳过
-npm run build
-CLOUDFLARE_API_TOKEN=xxx npx wrangler pages deploy dist --project-name=gzh-design-web
-```
+> 本项目为 BYOK，Cloudflare 侧无需配置任何服务端密钥；用户密钥始终只在本机浏览器。
 
 ## 源码声明（AGPL）
 
-在线服务页脚「源码」链接指向本项目的 GitHub 仓库。请在部署后把仓库地址填入
-`src/config.ts` 的 `REPO_URL`，否则页脚不显示该链接。
+在线服务页脚「源码」链接指向本项目的 GitHub 仓库（已写入 `src/config.ts` 的 `REPO_URL`）。
 
 ## 目录结构
 
