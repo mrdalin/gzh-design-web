@@ -398,7 +398,6 @@ export default function App() {
             title={result?.title || ''}
             loading={loading}
             validation={result?.validation || null}
-            onCopy={() => {}}
             onRegenerate={generate}
           />
         </aside>

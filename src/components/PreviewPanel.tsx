@@ -20,7 +20,6 @@ interface Props {
   title: string;
   loading: boolean;
   validation: ValidationResult | null;
-  onCopy: () => void;
   onRegenerate: () => void;
 }
 
