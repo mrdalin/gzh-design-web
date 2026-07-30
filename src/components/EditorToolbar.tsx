@@ -24,7 +24,7 @@ interface Props {
   onChange: (v: string) => void;
   imgbbKey: string;
   disabled?: boolean;
-  onDocxFile: (f: File | null) => void;
+  onDocxFile?: (f: File | null) => void;
 }
 
 // 维护一个简陋的 undo/redo 栈
@@ -129,11 +129,12 @@ export default function EditorToolbar({
   }
 
   function pickDocx() {
+    if (!onDocxFile) return;
     docxRef.current?.click();
   }
   function onDocxSelected(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
-    if (f) onDocxFile(f);
+    if (f) onDocxFile?.(f);
     e.target.value = '';
   }
 
@@ -159,8 +160,8 @@ export default function EditorToolbar({
         flexWrap: 'wrap',
       }}
     >
-      <input ref={docxRef} type="file" accept=".docx" style={{ display: 'none' }} onChange={onDocxSelected} />
-      <input ref={imgRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={onImageSelected} />
+        {onDocxFile && <input ref={docxRef} type="file" accept=".docx" style={{ display: 'none' }} onChange={onDocxSelected} />}
+        <input ref={imgRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={onImageSelected} />
 
       <Tooltip content="加粗"><Button size="small" theme="borderless" style={btnStyle} icon={<IconBold />} onClick={() => insertAround('**', '**')} disabled={disabled} /></Tooltip>
       <Tooltip content="斜体"><Button size="small" theme="borderless" style={btnStyle} icon={<IconItalic />} onClick={() => insertAround('*', '*')} disabled={disabled} /></Tooltip>
@@ -184,7 +185,9 @@ export default function EditorToolbar({
       <div style={{ width: 1, height: 18, background: 'var(--semi-color-border)', margin: '0 4px' }} />
 
       <Tooltip content="上传图片"><Button size="small" theme="borderless" style={btnStyle} icon={<IconImage />} onClick={pickImage} loading={uploading} disabled={disabled} /></Tooltip>
-      <Tooltip content="上传 Word"><Button size="small" theme="borderless" style={btnStyle} icon={<IconFile />} onClick={pickDocx} disabled={disabled} /></Tooltip>
+      {onDocxFile && (
+        <Tooltip content="上传 Word"><Button size="small" theme="borderless" style={btnStyle} icon={<IconFile />} onClick={pickDocx} disabled={disabled} /></Tooltip>
+      )}
 
       <div style={{ width: 1, height: 18, background: 'var(--semi-color-border)', margin: '0 4px' }} />
 

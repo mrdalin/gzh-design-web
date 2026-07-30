@@ -60,3 +60,17 @@ export async function generateTheme(
   if (!res.ok) throw new Error(data.error || '主题生成失败');
   return data;
 }
+
+export async function generateArticle(
+  prompt: string,
+  model: ModelConfig
+): Promise<{ article: string }> {
+  const res = await fetch('/api/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt, model }),
+  });
+  const data: any = await res.json();
+  if (!res.ok) throw new Error(data.error || '文案生成失败');
+  return data;
+}

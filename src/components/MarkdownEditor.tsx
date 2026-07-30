@@ -1,0 +1,55 @@
+import React, { useEffect, useRef } from 'react';
+import { Typography } from '@douyinfe/semi-ui';
+import EditorToolbar, { initHistory } from './EditorToolbar';
+
+const { Text } = Typography;
+
+interface Props {
+  value: string;
+  onChange: (v: string) => void;
+  imgbbKey: string;
+  disabled?: boolean;
+}
+
+export default function MarkdownEditor({ value, onChange, imgbbKey, disabled }: Props) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    initHistory(value);
+  }, []);
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          marginBottom: 8,
+          padding: '0 4px',
+        }}
+      >
+        <Text strong>Markdown 编辑器</Text>
+        <Text type="tertiary" size="small">可二次编辑</Text>
+      </div>
+
+      <EditorToolbar
+        textareaRef={textareaRef}
+        value={value}
+        onChange={onChange}
+        imgbbKey={imgbbKey}
+        disabled={disabled}
+        onDocxFile={() => {}}
+      />
+
+      <textarea
+        ref={textareaRef}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={disabled}
+        placeholder="在这里输入或粘贴 Markdown 文章…"
+        className="editor-textarea"
+      />
+    </div>
+  );
+}

@@ -87,48 +87,112 @@ body {
 }
 
 .app-shell {
-  height: calc(100% - 56px);
-  display: flex;
-}
-
-/* 左侧边栏：主题 + 模型 + 生成 */
-.app-sidebar {
-  width: 300px;
-  flex-shrink: 0;
-  border-right: 1px solid var(--semi-color-border);
-  background: var(--semi-color-bg-1);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.app-sidebar-inner {
   flex: 1;
-  padding: 16px;
-  overflow-y: auto;
+  min-height: 0;
   display: flex;
-  flex-direction: column;
-  gap: 16px;
 }
 
-/* 中间编辑器：自适应宽度 */
-.app-editor {
+/* 三栏原型布局 */
+.app-shell-proto {
+  display: flex;
+}
+
+.app-shell-proto > aside,
+.app-shell-proto > main {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.app-shell-proto > aside + aside,
+.app-shell-proto > main + aside,
+.app-shell-proto > aside + main {
+  border-left: 1px solid var(--semi-color-border);
+}
+
+.app-rich-inner,
+.app-md-inner {
+  flex: 1;
   padding: 16px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
-/* 右侧预览：固定手机宽度 */
-.app-preview {
-  width: 414px;
-  flex-shrink: 0;
-  border-left: 1px solid var(--semi-color-border);
-  background: var(--semi-color-fill-0);
+/* 顶部主题栏 */
+.theme-bar {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--semi-color-border);
+  background: var(--semi-color-bg-1);
+}
+
+.theme-bar-scroll {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.theme-bar-actions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.theme-bar-card {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 160px;
+  max-width: 220px;
+  padding: 10px 12px;
+  border: 1px solid var(--semi-color-border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: var(--semi-color-bg-0);
+}
+
+.theme-bar-card:hover {
+  border-color: var(--semi-color-primary);
+}
+
+.theme-bar-card.active {
+  border-color: var(--semi-color-primary);
+  box-shadow: 0 0 0 2px var(--semi-color-primary-light-default);
+}
+
+.theme-bar-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+
+.theme-bar-info {
+  min-width: 0;
+}
+
+.theme-bar-name {
+  font-weight: 600;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+}
+
+.theme-bar-scenario {
+  color: var(--semi-color-text-2);
+  font-size: 11px;
+  margin-top: 2px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
@@ -161,6 +225,54 @@ body {
 .editor-textarea:disabled {
   background: var(--semi-color-fill-0);
   cursor: not-allowed;
+}
+
+/* 富文本编辑器 */
+.rich-editor {
+  flex: 1;
+  min-height: 0;
+  padding: 12px;
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--semi-color-text-0);
+  background: var(--semi-color-bg-0);
+  border: 1px solid var(--semi-color-border);
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  overflow-y: auto;
+  outline: none;
+}
+
+.rich-editor:empty::before {
+  content: attr(data-placeholder);
+  color: var(--semi-color-text-2);
+  pointer-events: none;
+}
+
+.rich-editor:focus {
+  border-color: var(--semi-color-primary);
+}
+
+.rich-editor p {
+  margin: 0 0 0.6em;
+}
+
+.rich-editor blockquote {
+  margin: 0 0 0.6em;
+  padding-left: 12px;
+  border-left: 3px solid var(--semi-color-border);
+  color: var(--semi-color-text-2);
+}
+
+.rich-editor ul,
+.rich-editor ol {
+  margin: 0 0 0.6em;
+  padding-left: 24px;
+}
+
+.rich-editor img {
+  max-width: 100%;
+  height: auto;
 }
 
 /* 窄边栏里的主题卡片用单列 */

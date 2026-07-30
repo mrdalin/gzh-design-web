@@ -6,11 +6,12 @@ import {
   Select,
   Modal,
   Space,
-  Tag,
+  Input,
 } from '@douyinfe/semi-ui';
-import { IconHistory, IconSetting, IconCode, IconSend } from '@douyinfe/semi-icons';
+import { IconCode, IconSend, IconArrowRight, IconHistory, IconSetting } from '@douyinfe/semi-icons';
 import type { HistoryItem, LayoutResult, StoredModel, Theme } from './types';
-import { fetchThemes, layout } from './lib/api';
+import { fetchThemes, layout, generateArticle } from './lib/api';
+import { htmlToMarkdown } from './lib/htmlToMarkdown';
 import {
   loadModels,
   saveModels,
@@ -24,13 +25,13 @@ import {
   saveLastThemeId,
   loadCustomLib,
   saveCustomLib,
-  clearCustomLib,
 } from './lib/storage';
 import { copyRichText } from './lib/clipboard';
 import { REPO_URL } from './config';
 
-import InputPanel from './components/InputPanel';
-import ThemeSelect from './components/ThemeSelect';
+import ThemeBar from './components/ThemeBar';
+import RichEditor from './components/RichEditor';
+import MarkdownEditor from './components/MarkdownEditor';
 import PreviewPanel from './components/PreviewPanel';
 import HistoryDrawer from './components/HistoryDrawer';
 import SettingsDrawer from './components/SettingsDrawer';
@@ -41,9 +42,9 @@ const { Text } = Typography;
 
 export default function App() {
   const [themes, setThemes] = useState<Theme[]>([]);
+  const [richHtml, setRichHtml] = useState('');
   const [article, setArticle] = useState('');
-  const [docxFile, setDocxFile] = useState<File | null>(null);
-  const [docxName, setDocxName] = useState('');
+  const [prompt, setPrompt] = useState('');
 
   const [selectedThemeId, setSelectedThemeId] = useState('');
   const [customLib, setCustomLib] = useState('');
@@ -56,6 +57,7 @@ export default function App() {
 
   const [result, setResult] = useState<LayoutResult | null>(null);
   const [loading, setLoading] = useState(false);
+  const [generating, setGenerating] = useState(false);
   const [history, setHistory] = useState<HistoryItem[]>([]);
 
   const [historyVisible, setHistoryVisible] = useState(false);
@@ -64,7 +66,6 @@ export default function App() {
   const [wizardVisible, setWizardVisible] = useState(false);
   const [viewItem, setViewItem] = useState<HistoryItem | null>(null);
 
-  // 初始化：加载主题、本地配置
   useEffect(() => {
     fetchThemes()
       .then((t) => {
@@ -91,6 +92,7 @@ export default function App() {
   }, []);
 
   const customActive = selectedThemeId === 'custom';
+  const currentModel = models.find((x) => x.id === selectedModelId);
 
   function handleThemeSelect(id: string) {
     if (id === 'custom' && !customLib) {
@@ -111,18 +113,57 @@ export default function App() {
     Toast.success(`已应用主题「${name}」`);
   }
 
-  async function generate() {
-    const m = models.find((x) => x.id === selectedModelId);
-    if (!m || !m.apiKey || !m.baseUrl || !m.model) {
-      Toast.warning('请先在「设置 → 管理模型」里配置并选择一个可用模型');
+  function convertToMarkdown() {
+    if (!richHtml.replace(/<[^>]+>/g, '').trim()) {
+      Toast.warning('左侧编辑器还没有内容');
       return;
     }
-    if (!article.trim() && !docxFile) {
-      Toast.warning('请先粘贴文章或上传 Word 文档');
+    const md = htmlToMarkdown(richHtml);
+    setArticle(md);
+    Toast.success('已转换为 Markdown，可在中间编辑器二次编辑');
+  }
+
+  async function generateFromPrompt() {
+    if (!prompt.trim()) {
+      Toast.warning('请输入提示词');
+      return;
+    }
+    const m = currentModel;
+    if (!m || !m.apiKey || !m.baseUrl || !m.model) {
+      Toast.warning('请先在「配置 API」里配置并选择一个可用模型');
+      return;
+    }
+    setGenerating(true);
+    try {
+      const res = await generateArticle(prompt, {
+        id: m.id,
+        displayName: m.displayName,
+        baseUrl: m.baseUrl,
+        apiKey: m.apiKey,
+        model: m.model,
+      });
+      setRichHtml(`<p>${res.article.replace(/\n{2,}/g, '</p><p>').replace(/\n/g, '<br>')}</p>`);
+      setArticle(res.article);
+      Toast.success('AI 文案已生成');
+    } catch (e: any) {
+      Toast.error(e?.message || '文案生成失败');
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  async function generate() {
+    const m = currentModel;
+    if (!m || !m.apiKey || !m.baseUrl || !m.model) {
+      Toast.warning('请先在「配置 API」里配置并选择一个可用模型');
+      return;
+    }
+    if (!article.trim()) {
+      Toast.warning('请先在中间 Markdown 编辑器里输入或转换文章');
       return;
     }
     if (!selectedThemeId) {
-      Toast.warning('请选择一个主题');
+      Toast.warning('请在顶部选择一个主题');
       return;
     }
     if (selectedThemeId === 'custom' && !customLib) {
@@ -133,8 +174,7 @@ export default function App() {
     setLoading(true);
     try {
       const res = await layout({
-        article: docxFile ? undefined : article,
-        file: docxFile || undefined,
+        article,
         themeId: selectedThemeId === 'custom' ? undefined : selectedThemeId,
         customLib: selectedThemeId === 'custom' ? customLib : undefined,
         model: {
@@ -195,70 +235,92 @@ export default function App() {
     saveLastModelId(id);
   }
 
-  const currentModel = models.find((x) => x.id === selectedModelId);
-
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <header className="app-header">
         <div className="app-logo">
           <span style={{ color: 'var(--semi-color-primary)' }}>✍️</span>
-          公众号排版工具
+          微信公众号 AI 排版
         </div>
         <Space>
-          {REPO_URL && (
-            <Button
-              theme="borderless"
-              icon={<IconCode />}
-              onClick={() => window.open(REPO_URL, '_blank')}
-            >
-              源码
-            </Button>
-          )}
+          <Select
+            style={{ width: 160 }}
+            size="small"
+            value={selectedModelId}
+            onChange={(v) => handleModelSelect(v as string)}
+            optionList={models.map((m) => ({
+              label: m.displayName || m.model,
+              value: m.id,
+            }))}
+            placeholder="选择模型"
+          />
           <Button theme="borderless" icon={<IconHistory />} onClick={() => setHistoryVisible(true)}>
             历史
           </Button>
+          {REPO_URL && (
+            <Button theme="borderless" icon={<IconCode />} onClick={() => window.open(REPO_URL, '_blank')}>
+              源码
+            </Button>
+          )}
           <Button theme="borderless" icon={<IconSetting />} onClick={() => setSettingsVisible(true)}>
             设置
           </Button>
         </Space>
       </header>
 
-      <div className="app-shell">
-        {/* 左：主题 + 模型 + 生成 */}
-        <aside className="app-sidebar">
-          <div className="app-sidebar-inner">
-            <ThemeSelect
-              themes={themes}
-              value={selectedThemeId}
-              customActive={customActive}
-              customName={customThemeName}
-              onSelect={handleThemeSelect}
-              onOpenWizard={() => setWizardVisible(true)}
-            />
+      <ThemeBar
+        themes={themes}
+        value={selectedThemeId}
+        customActive={customActive}
+        customName={customThemeName}
+        onSelect={handleThemeSelect}
+        onOpenWizard={() => setWizardVisible(true)}
+        onOpenHistory={() => setHistoryVisible(true)}
+        onOpenSettings={() => setSettingsVisible(true)}
+      />
 
-            <div style={{ marginTop: 16 }}>
-              <Text strong>排版模型</Text>
-              <div style={{ marginTop: 8, display: 'flex', gap: 8, alignItems: 'center' }}>
-                <Select
-                  style={{ flex: 1 }}
-                  value={selectedModelId}
-                  onChange={(v) => handleModelSelect(v as string)}
-                  optionList={models.map((m) => ({
-                    label: m.displayName || m.model,
-                    value: m.id,
-                  }))}
-                />
-                <Button icon={<IconSetting />} onClick={() => setModelVisible(true)}>
-                  管理
-                </Button>
-              </div>
-              {currentModel && !currentModel.apiKey && (
-                <Text type="warning" size="small">
-                  当前模型未填写 API Key，请到「管理」中补全
-                </Text>
-              )}
+      <div className="app-shell app-shell-proto">
+        {/* 左：富文本编辑器 */}
+        <aside className="app-rich">
+          <div className="app-rich-inner">
+            <RichEditor html={richHtml} onChange={setRichHtml} imgbbKey={imgbbKey} disabled={generating} />
+
+            <Button
+              theme="solid"
+              size="large"
+              block
+              onClick={convertToMarkdown}
+              icon={<IconArrowRight />}
+              style={{ marginTop: 12 }}
+            >
+              转换为 Markdown →
+            </Button>
+
+            <div style={{ marginTop: 12 }}>
+              <Input
+                value={prompt}
+                onChange={(v) => setPrompt(v)}
+                placeholder="输入提示语，让 AI 帮你生成文案…"
+                disabled={generating}
+                suffix={
+                  <Button
+                    theme="borderless"
+                    icon={<IconSend />}
+                    loading={generating}
+                    disabled={!prompt.trim()}
+                    onClick={generateFromPrompt}
+                  />
+                }
+                onEnterPress={generateFromPrompt}
+              />
             </div>
+          </div>
+        </aside>
 
+        {/* 中：Markdown 编辑器 */}
+        <main className="app-md">
+          <div className="app-md-inner">
+            <MarkdownEditor value={article} onChange={setArticle} imgbbKey={imgbbKey} disabled={loading} />
             <Button
               theme="solid"
               size="large"
@@ -266,29 +328,14 @@ export default function App() {
               onClick={generate}
               loading={loading}
               icon={<IconSend />}
-              style={{ marginTop: 'auto' }}
+              style={{ marginTop: 12 }}
             >
-              生成排版
+              生成排版 →
             </Button>
           </div>
-        </aside>
-
-        {/* 中：编辑器 */}
-        <main className="app-editor">
-          <InputPanel
-            article={article}
-            onArticleChange={setArticle}
-            onDocxFile={(f) => {
-              setDocxFile(f);
-              setDocxName(f ? f.name : '');
-            }}
-            docxName={docxName}
-            imgbbKey={imgbbKey}
-            disabled={loading}
-          />
         </main>
 
-        {/* 右：预览（手机宽度） */}
+        {/* 右：预览 */}
         <aside className="app-preview">
           <PreviewPanel
             html={result?.html || ''}
