@@ -317,7 +317,7 @@ export default function App() {
         onSelect={handleThemeSelect}
         onOpenWizard={() => setWizardVisible(true)}
         onOpenHistory={() => setHistoryVisible(true)}
-        onOpenSettings={() => setImgbbVisible(true)}
+        onOpenSettings={() => setModelVisible(true)}
       />
 
       <div className="app-shell app-shell-proto">
