@@ -8,6 +8,7 @@ export interface ValidationResult {
 }
 
 const FORBIDDEN: [RegExp, string][] = [
+  [/\*\*[^*]+\*\*/, '检测到 Markdown 粗体语法残留（**...**），应转为 <strong>'],
   [/<style[\s>]/i, '<style> 标签会被过滤，样式必须内联'],
   [/<script[\s>]/i, '<script> 标签会被过滤'],
   [/<\/?div[\s>]/i, '<div> 会被改写，请用 <section>'],
@@ -144,6 +145,10 @@ export function validate(html: string): ValidationResult {
         .map((s) => `「${s}」`)
         .join('；')}`
     );
+  }
+
+  if (/PART\s+\d{2}/i.test(html) && /overflow-x:\s*scroll/i.test(html)) {
+    errors.push('仍生成横向滚动的 PART 目录卡片，已明确禁止，请移除目录并改用简单章节标题');
   }
 
   if (checker.badLeaf.length) {

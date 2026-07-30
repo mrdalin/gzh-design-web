@@ -73,6 +73,9 @@ async function onRequestPostHandler({ request }: { request: Request }) {
 - 必须逐段保留原文的完整正文，不得省略、不得摘要、不得把正文折叠成只显示小标题的卡片或目录。
 - 每个章节/小节除了标题外，必须包含该小节下的全部段落文字，按原文顺序连续展开；禁止只输出标题或只保留每段第一句话。
 - 主题组件库里的卡片/分块/图标组件只能用于装饰小节标题或突出重点，不能用来替代正文段落；正文段落必须使用普通 <p>、<blockquote>、<ul>/<ol> 等文档流元素完整呈现。
+- 严禁生成任何形式的目录、导航、横向滚动卡片、PART 分块、章节预览卡片。章节标题直接用简单样式呈现，不要把章节列表做成可滑动的卡片墙。
+- 严禁扩写、改写、编造数据、日期、案例、引言或添加原文没有的表格。必须忠于原文，只排版不创作。
+- 输出必须是纯 HTML，不能残留任何 Markdown 语法（如 **粗体**、*斜体*、# 标题、- 列表等）。
 - 如果原文较长，优先保证所有文字都出现，宁可减少装饰性组件数量，也不能牺牲正文完整性。
 
 # 文字包裹规范（公众号粘贴必需，违反会丢字 / 乱码）
@@ -108,13 +111,19 @@ async function onRequestPostHandler({ request }: { request: Request }) {
           content: `你的输出违反了以下公众号平台限制，请修正后只输出合规 HTML 片段：\n${result.errors.join('\n')}`,
         },
       ]);
-      const fixed = stripFences(fix);
+      let fixed = stripFences(fix);
+      fixed = fixLeafSpans(fixed);
       const r2 = validate(fixed);
       if (r2.errors.length <= result.errors.length) {
         html = fixed;
         result = r2;
       }
     }
+
+    // 最终兜底：模型若仍不听从提示词，直接清理目录块与 Markdown 残留
+    html = removeTocScroll(html);
+    html = fixMarkdownResiduals(html);
+    result = validate(html);
 
     return json({
       html,
@@ -139,7 +148,24 @@ function fixLeafSpans(html: string): string {
   );
 }
 
-function stripFences(s: string): string {  s = s.trim();
+// 兜底移除：模型常不听从提示词，仍然生成 "8 Parts + Conclusion" 横向滚动目录。
+// 该目录块通常包含 overflow-x:scroll 与连续 PART 卡片，直接移除可节省 token 并避免折叠。
+function removeTocScroll(html: string): string {
+  return html.replace(
+    /<section\b[^>]*>(?:\s*<!--[\s\S]*?-->\s*)?<section\b[^>]*>[\s\S]*?overflow-x:\s*scroll[\s\S]*?(?:PART\s+\d{2}|Parts\s*\+\s*Conclusion)[\s\S]*?<\/section>\s*<\/section>/gi,
+    ''
+  );
+}
+
+// 兜底转换：模型偶尔输出 Markdown 语法残留（如 **粗体**、*斜体*）。
+function fixMarkdownResiduals(html: string): string {
+  let s = html.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>');
+  s = s.replace(/\*([^*]+?)\*/g, '<em>$1</em>');
+  return s;
+}
+
+function stripFences(s: string): string {
+  s = s.trim();
   const fence = s.match(/^```(?:html)?\s*([\s\S]*?)\s*```$/i);
   if (fence) s = fence[1].trim();
   // 去掉可能的 <!DOCTYPE>/<html> 外壳
