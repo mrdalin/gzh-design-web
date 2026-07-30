@@ -43,12 +43,13 @@ export default function PreviewPanel({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '10px 16px',
+          padding: '10px 12px',
           borderBottom: '1px solid var(--semi-color-border)',
+          background: 'var(--semi-color-bg-1)',
         }}
       >
-        <Title heading={5} style={{ margin: 0 }}>
-          预览{title ? `： ${title}` : ''}
+        <Title heading={6} style={{ margin: 0 }}>
+          手机预览{title ? ` · ${title}` : ''}
         </Title>
         <Space>
           <Button theme="light" icon={<IconRefresh />} onClick={onRegenerate} disabled={loading}>
@@ -68,8 +69,8 @@ export default function PreviewPanel({
         ) : !html ? (
           <div
             style={{
-              maxWidth: 680,
-              margin: '60px auto',
+              maxWidth: '100%',
+              padding: '40px 16px',
               textAlign: 'center',
               color: 'var(--semi-color-text-2)',
             }}

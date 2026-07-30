@@ -8,7 +8,7 @@ import {
   Space,
   Tag,
 } from '@douyinfe/semi-ui';
-import { IconHistory, IconSetting, IconCode, IconArrowRight } from '@douyinfe/semi-icons';
+import { IconHistory, IconSetting, IconCode, IconSend } from '@douyinfe/semi-icons';
 import type { HistoryItem, LayoutResult, StoredModel, Theme } from './types';
 import { fetchThemes, layout } from './lib/api';
 import {
@@ -223,79 +223,73 @@ export default function App() {
         </Space>
       </header>
 
-      <div className="app-shell" style={{ display: 'flex' }}>
-        {/* 左：输入 + 主题 + 模型 */}
-        <div
-          style={{
-            width: 480,
-            borderRight: '1px solid var(--semi-color-border)',
-            padding: 16,
-            overflow: 'auto',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 16,
-          }}
-        >
-          <div style={{ flex: 1, minHeight: 280 }}>
-            <InputPanel
-              article={article}
-              onArticleChange={setArticle}
-              onDocxFile={(f) => {
-                setDocxFile(f);
-                setDocxName(f ? f.name : '');
-              }}
-              docxName={docxName}
-              imgbbKey={imgbbKey}
-              disabled={loading}
+      <div className="app-shell">
+        {/* 左：主题 + 模型 + 生成 */}
+        <aside className="app-sidebar">
+          <div className="app-sidebar-inner">
+            <ThemeSelect
+              themes={themes}
+              value={selectedThemeId}
+              customActive={customActive}
+              customName={customThemeName}
+              onSelect={handleThemeSelect}
+              onOpenWizard={() => setWizardVisible(true)}
             />
-          </div>
 
-          <ThemeSelect
-            themes={themes}
-            value={selectedThemeId}
-            customActive={customActive}
-            customName={customThemeName}
-            onSelect={handleThemeSelect}
-            onOpenWizard={() => setWizardVisible(true)}
-          />
-
-          <div>
-            <Text strong>排版模型</Text>
-            <div style={{ marginTop: 8, display: 'flex', gap: 8, alignItems: 'center' }}>
-              <Select
-                style={{ flex: 1 }}
-                value={selectedModelId}
-                onChange={(v) => handleModelSelect(v as string)}
-                optionList={models.map((m) => ({
-                  label: m.displayName || m.model,
-                  value: m.id,
-                }))}
-              />
-              <Button icon={<IconSetting />} onClick={() => setModelVisible(true)}>
-                管理
-              </Button>
+            <div style={{ marginTop: 16 }}>
+              <Text strong>排版模型</Text>
+              <div style={{ marginTop: 8, display: 'flex', gap: 8, alignItems: 'center' }}>
+                <Select
+                  style={{ flex: 1 }}
+                  value={selectedModelId}
+                  onChange={(v) => handleModelSelect(v as string)}
+                  optionList={models.map((m) => ({
+                    label: m.displayName || m.model,
+                    value: m.id,
+                  }))}
+                />
+                <Button icon={<IconSetting />} onClick={() => setModelVisible(true)}>
+                  管理
+                </Button>
+              </div>
+              {currentModel && !currentModel.apiKey && (
+                <Text type="warning" size="small">
+                  当前模型未填写 API Key，请到「管理」中补全
+                </Text>
+              )}
             </div>
-            {currentModel && (!currentModel.apiKey) && (
-              <Text type="warning" size="small">
-                当前模型未填写 API Key，请到「管理」中补全
-              </Text>
-            )}
+
+            <Button
+              theme="solid"
+              size="large"
+              block
+              onClick={generate}
+              loading={loading}
+              icon={<IconSend />}
+              style={{ marginTop: 'auto' }}
+            >
+              生成排版
+            </Button>
           </div>
+        </aside>
 
-          <Button
-            theme="solid"
-            size="large"
-            block
-            onClick={generate}
-            loading={loading}
-            icon={<IconArrowRight />}
-          >
-            生成排版
-          </Button>
-        </div>
+        {/* 中：编辑器 */}
+        <main className="app-editor">
+          <InputPanel
+            article={article}
+            onArticleChange={setArticle}
+            onDocxFile={(f) => {
+              setDocxFile(f);
+              setDocxName(f ? f.name : '');
+            }}
+            docxName={docxName}
+            imgbbKey={imgbbKey}
+            disabled={loading}
+          />
+        </main>
 
-        {/* 右：预览 */}
-        <div style={{ flex: 1, minWidth: 0 }}>
+        {/* 右：预览（手机宽度） */}
+        <aside className="app-preview">
           <PreviewPanel
             html={result?.html || ''}
             title={result?.title || ''}
@@ -304,7 +298,7 @@ export default function App() {
             onCopy={() => {}}
             onRegenerate={generate}
           />
-        </div>
+        </aside>
       </div>
 
       <HistoryDrawer
