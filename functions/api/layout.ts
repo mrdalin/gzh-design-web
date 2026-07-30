@@ -75,6 +75,12 @@ async function onRequestPostHandler({ request }: { request: Request }) {
 - 主题组件库里的卡片/分块/图标组件只能用于装饰小节标题或突出重点，不能用来替代正文段落；正文段落必须使用普通 <p>、<blockquote>、<ul>/<ol> 等文档流元素完整呈现。
 - 如果原文较长，优先保证所有文字都出现，宁可减少装饰性组件数量，也不能牺牲正文完整性。
 
+# 文字包裹规范（公众号粘贴必需，违反会丢字 / 乱码）
+- 所有正文文字必须用「空 leaf」包裹：<span leaf="">这里是文字</span>。leaf 属性值必须是空字符串 ""，文字写在标签体里。
+- 严禁写成 <span leaf="正文"></span>（把文字塞进 leaf 属性、标签体留空）。这种写法粘贴到公众号后文字会丢失，且正文中一旦包含引号就会破坏整个 HTML 结构。
+- <strong>/<em>/<span 装饰> 等内联标签内的文字，也要保证落在 <span leaf="">体内，例如：<strong style="color:#e11d48;"><span leaf="">重点词</span></strong>。
+- 图片、分隔线等无文字元素除外，但凡有可见文字就必须有 <span leaf=""> 包裹。
+
 # 输出要求
 只输出最终公众号正文 HTML 片段（从 <section> 开始到 </section> 结束），不要包含 <!DOCTYPE>/<html>/<head>/<body>，不要任何解释文字，不要用 markdown 代码块围栏包裹。`;
 
@@ -85,6 +91,7 @@ async function onRequestPostHandler({ request }: { request: Request }) {
       { role: 'user', content: user },
     ]);
     html = stripFences(html);
+    html = fixLeafSpans(html);
 
     let result = validate(html);
     // 一次自动纠正重试
@@ -119,8 +126,20 @@ async function onRequestPostHandler({ request }: { request: Request }) {
   }
 }
 
-function stripFences(s: string): string {
-  s = s.trim();
+// 兜底修复：模型常把正文塞进 <span leaf="正文"> 的属性里（标签体反而空）。
+// 这种写法粘贴到公众号会丢字，且正文含引号时破坏整段 HTML。这里把属性值移回标签体。
+function fixLeafSpans(html: string): string {
+  return html.replace(
+    /<span\b([^>]*?)\sleaf="([^"<]*)"([^>]*)>\s*<\/span>/gi,
+    (_m, before: string, val: string, after: string) => {
+      const attrs = (before + after).replace(/\s*leaf="[^"]*"/i, '').trim();
+      const open = attrs ? `<span ${attrs} leaf="">` : '<span leaf="">';
+      return `${open}${val}</span>`;
+    }
+  );
+}
+
+function stripFences(s: string): string {  s = s.trim();
   const fence = s.match(/^```(?:html)?\s*([\s\S]*?)\s*```$/i);
   if (fence) s = fence[1].trim();
   // 去掉可能的 <!DOCTYPE>/<html> 外壳

@@ -43,6 +43,7 @@ class LeafChecker {
   spanLeafCount = 0;
   unwrapped: string[] = [];
   halfPunct: string[] = [];
+  badLeaf: string[] = [];
 
   startTag(tag: string, attrs: Record<string, string | null>) {
     const isLeaf = tag === 'span' && 'leaf' in attrs;
@@ -51,6 +52,9 @@ class LeafChecker {
     if (isLeaf) {
       this.spanLeafCount++;
       this.leafDepth++;
+      const leafVal = attrs['leaf'] || '';
+      // leaf 应为空 ""；若属性值非空，说明文字被塞进了属性，会导致粘贴丢字/乱码
+      if (leafVal.trim()) this.badLeaf.push(leafVal.trim().length > 20 ? leafVal.trim().slice(0, 20) + '…' : leafVal.trim());
     }
     if (isCode) this.codeDepth++;
     this.stack.push({ tag, isLeaf, isCode });
@@ -136,6 +140,15 @@ export function validate(html: string): ValidationResult {
   if (checker.halfPunct.length) {
     warnings.push(
       `${checker.halfPunct.length} 处正文疑似半角标点/英文引号，应改中文全角（代码块内不计）。例：${checker.halfPunct
+        .slice(0, 5)
+        .map((s) => `「${s}」`)
+        .join('；')}`
+    );
+  }
+
+  if (checker.badLeaf.length) {
+    errors.push(
+      `${checker.badLeaf.length} 处 <span leaf="..."> 把文字写进了 leaf 属性（应为空 leaf="" 且文字在标签体内），会导致粘贴后丢字或 HTML 乱码。例：${checker.badLeaf
         .slice(0, 5)
         .map((s) => `「${s}」`)
         .join('；')}`
