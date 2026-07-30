@@ -9,11 +9,13 @@ interface Props {
   value: string;
   onChange: (v: string) => void;
   imgbbKey: string;
+  imgbbExpiry?: number;
   disabled?: boolean;
   textareaRef?: React.RefObject<HTMLTextAreaElement>;
+  onNeedImgbbConfig?: () => void;
 }
 
-export default function MarkdownEditor({ value, onChange, imgbbKey, disabled, textareaRef: externalRef }: Props) {
+export default function MarkdownEditor({ value, onChange, imgbbKey, imgbbExpiry, disabled, textareaRef: externalRef, onNeedImgbbConfig }: Props) {
   const internalRef = useRef<HTMLTextAreaElement>(null);
   const textareaRef = externalRef ?? internalRef;
 
@@ -41,8 +43,10 @@ export default function MarkdownEditor({ value, onChange, imgbbKey, disabled, te
         value={value}
         onChange={onChange}
         imgbbKey={imgbbKey}
+        imgbbExpiry={imgbbExpiry}
         disabled={disabled}
         onDocxFile={() => {}}
+        onNeedImgbbConfig={onNeedImgbbConfig}
       />
 
       <textarea

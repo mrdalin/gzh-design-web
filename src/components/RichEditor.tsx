@@ -22,7 +22,9 @@ interface Props {
   html: string;
   onChange: (html: string) => void;
   imgbbKey: string;
+  imgbbExpiry?: number;
   disabled?: boolean;
+  onNeedImgbbConfig?: () => void;
 }
 
 const ALLOWED_TAGS = new Set([
@@ -86,7 +88,7 @@ function sanitizeWordHtml(raw: string): string {
   return tmp.innerHTML;
 }
 
-export default function RichEditor({ html, onChange, imgbbKey, disabled }: Props) {
+export default function RichEditor({ html, onChange, imgbbKey, imgbbExpiry, disabled, onNeedImgbbConfig }: Props) {
   const editorRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -135,7 +137,7 @@ export default function RichEditor({ html, onChange, imgbbKey, disabled }: Props
 
   async function pickImage() {
     if (!imgbbKey.trim()) {
-      Toast.warning('请先在右上角「设置」里填写 imgbb API Key');
+      onNeedImgbbConfig?.();
       return;
     }
     imgRef.current?.click();
@@ -146,7 +148,7 @@ export default function RichEditor({ html, onChange, imgbbKey, disabled }: Props
     if (!f) return;
     setUploading(true);
     try {
-      const res = await uploadImage(f, imgbbKey);
+      const res = await uploadImage(f, imgbbKey, imgbbExpiry);
       document.execCommand('insertImage', false, res.url);
       emit();
       Toast.success('图片已插入');

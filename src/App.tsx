@@ -7,8 +7,16 @@ import {
   Modal,
   Space,
   Input,
+  Dropdown,
 } from '@douyinfe/semi-ui';
-import { IconCode, IconSend, IconArrowRight, IconHistory, IconSetting } from '@douyinfe/semi-icons';
+import {
+  IconCode,
+  IconSend,
+  IconArrowRight,
+  IconHistory,
+  IconSetting,
+  IconImage,
+} from '@douyinfe/semi-icons';
 import type { HistoryItem, LayoutResult, StoredModel, Theme } from './types';
 import { fetchThemes, layout, generateArticle } from './lib/api';
 import { htmlToMarkdown } from './lib/htmlToMarkdown';
@@ -17,6 +25,8 @@ import {
   saveModels,
   loadImgbbKey,
   saveImgbbKey,
+  loadImgbbExpiry,
+  saveImgbbExpiry,
   loadHistory,
   saveHistory,
   loadLastModelId,
@@ -34,7 +44,7 @@ import RichEditor from './components/RichEditor';
 import MarkdownEditor from './components/MarkdownEditor';
 import PreviewPanel from './components/PreviewPanel';
 import HistoryDrawer from './components/HistoryDrawer';
-import SettingsDrawer from './components/SettingsDrawer';
+import ImgbbConfigModal from './components/ImgbbConfigModal';
 import ModelManager from './components/ModelManager';
 import CustomThemeWizard from './components/CustomThemeWizard';
 
@@ -54,6 +64,7 @@ export default function App() {
   const [selectedModelId, setSelectedModelId] = useState('');
 
   const [imgbbKey, setImgbbKey] = useState('');
+  const [imgbbExpiry, setImgbbExpiry] = useState(0);
 
   const [result, setResult] = useState<LayoutResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -65,7 +76,7 @@ export default function App() {
   const mdTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   const [historyVisible, setHistoryVisible] = useState(false);
-  const [settingsVisible, setSettingsVisible] = useState(false);
+  const [imgbbVisible, setImgbbVisible] = useState(false);
   const [modelVisible, setModelVisible] = useState(false);
   const [wizardVisible, setWizardVisible] = useState(false);
   const [viewItem, setViewItem] = useState<HistoryItem | null>(null);
@@ -87,6 +98,7 @@ export default function App() {
     else if (m[0]) setSelectedModelId(m[0].id);
 
     setImgbbKey(loadImgbbKey());
+    setImgbbExpiry(loadImgbbExpiry());
     setHistory(loadHistory());
     const cl = loadCustomLib();
     if (cl) {
@@ -240,6 +252,15 @@ export default function App() {
     saveModels(next);
   }
 
+  function handleImgbbSave(key: string, expiry: number) {
+    saveImgbbKey(key);
+    saveImgbbExpiry(expiry);
+    setImgbbKey(key);
+    setImgbbExpiry(expiry);
+    Toast.success('图片 API 已保存到本机');
+    setImgbbVisible(false);
+  }
+
   function handleModelSelect(id: string) {
     setSelectedModelId(id);
     saveLastModelId(id);
@@ -272,9 +293,19 @@ export default function App() {
               源码
             </Button>
           )}
-          <Button theme="borderless" icon={<IconSetting />} onClick={() => setSettingsVisible(true)}>
-            设置
-          </Button>
+          <Dropdown trigger="click" position="bottomRight">
+            <Button theme="borderless" icon={<IconSetting />}>
+              配置 API
+            </Button>
+            <Dropdown.Menu>
+              <Dropdown.Item icon={<IconImage />} onClick={() => setImgbbVisible(true)}>
+                图片 API（imgbb 图床）
+              </Dropdown.Item>
+              <Dropdown.Item icon={<IconSetting />} onClick={() => setModelVisible(true)}>
+                模型 API（AI 模型）
+              </Dropdown.Item>
+            </Dropdown.Menu>
+          </Dropdown>
         </Space>
       </header>
 
@@ -286,14 +317,21 @@ export default function App() {
         onSelect={handleThemeSelect}
         onOpenWizard={() => setWizardVisible(true)}
         onOpenHistory={() => setHistoryVisible(true)}
-        onOpenSettings={() => setSettingsVisible(true)}
+        onOpenSettings={() => setImgbbVisible(true)}
       />
 
       <div className="app-shell app-shell-proto">
         {/* 左：富文本编辑器 */}
         <aside className="app-rich">
           <div className="app-rich-inner">
-            <RichEditor html={richHtml} onChange={setRichHtml} imgbbKey={imgbbKey} disabled={generating} />
+            <RichEditor
+              html={richHtml}
+              onChange={setRichHtml}
+              imgbbKey={imgbbKey}
+              imgbbExpiry={imgbbExpiry}
+              disabled={generating}
+              onNeedImgbbConfig={() => setImgbbVisible(true)}
+            />
 
             <Button
               theme="solid"
@@ -330,7 +368,15 @@ export default function App() {
         {/* 中：Markdown 编辑器 */}
         <main className="app-md">
           <div className="app-md-inner">
-            <MarkdownEditor value={article} onChange={setArticle} imgbbKey={imgbbKey} disabled={loading} textareaRef={mdTextareaRef} />
+            <MarkdownEditor
+              value={article}
+              onChange={setArticle}
+              imgbbKey={imgbbKey}
+              imgbbExpiry={imgbbExpiry}
+              disabled={loading}
+              textareaRef={mdTextareaRef}
+              onNeedImgbbConfig={() => setImgbbVisible(true)}
+            />
             <Button
               theme="solid"
               size="large"
@@ -370,15 +416,12 @@ export default function App() {
         onUse={handleUseHistory}
       />
 
-      <SettingsDrawer
-        visible={settingsVisible}
-        onClose={() => setSettingsVisible(false)}
+      <ImgbbConfigModal
+        visible={imgbbVisible}
+        onClose={() => setImgbbVisible(false)}
         imgbbKey={imgbbKey}
-        onImgbbChange={setImgbbKey}
-        onOpenModels={() => {
-          setSettingsVisible(false);
-          setModelVisible(true);
-        }}
+        expiry={imgbbExpiry}
+        onSave={handleImgbbSave}
       />
 
       <ModelManager

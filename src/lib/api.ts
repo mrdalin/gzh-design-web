@@ -36,14 +36,19 @@ export async function layout(params: {
 
 export async function uploadImage(
   file: File,
-  key: string
+  key: string,
+  expiration?: number
 ): Promise<{ url: string; deleteUrl?: string; thumb?: string }> {
   // 同样规避 multipart 解析问题：图片以 base64 data URL 走 JSON。
   const base64 = await fileToBase64(file);
   const res = await fetch('/api/upload', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ image: base64, key }),
+    body: JSON.stringify({
+      image: base64,
+      key,
+      expiration: expiration && expiration > 0 ? expiration : undefined,
+    }),
   });
   const data: any = await res.json();
   if (!res.ok) throw new Error(data.error || '图片上传失败');

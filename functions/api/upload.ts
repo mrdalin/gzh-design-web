@@ -13,6 +13,7 @@ async function onRequestPostHandler({ request }: { request: Request }) {
     const body: any = await request.json();
     const imageB64: string | null = body.image || null;
     const key: string | null = body.key || null;
+    const expiration: number | null = body.expiration || null;
 
     if (!imageB64) return json({ error: '缺少图片文件' }, 400);
     if (!key) return json({ error: '缺少 imgbb API key' }, 400);
@@ -20,7 +21,10 @@ async function onRequestPostHandler({ request }: { request: Request }) {
     const fd = new FormData();
     fd.append('image', imageB64);
 
-    const resp = await fetch(`https://api.imgbb.com/1/upload?key=${encodeURIComponent(key)}`, {
+    const imgbbUrl =
+      `https://api.imgbb.com/1/upload?key=${encodeURIComponent(key)}` +
+      (expiration && expiration > 0 ? `&expiration=${Math.floor(expiration)}` : '');
+    const resp = await fetch(imgbbUrl, {
       method: 'POST',
       body: fd,
     });

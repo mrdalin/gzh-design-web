@@ -4,12 +4,22 @@ import type { HistoryItem, StoredModel } from '../types';
 const KEYS = {
   models: 'gzh_models_v1',
   imgbb: 'gzh_imgbb_key_v1',
+  imgbbExpiry: 'gzh_imgbb_expiry_v1',
   history: 'gzh_history_v1',
   lastModelId: 'gzh_last_model_v1',
   lastThemeId: 'gzh_last_theme_v1',
   customLib: 'gzh_custom_lib_v1',
   customThemeName: 'gzh_custom_theme_name_v1',
 };
+
+// imgbb 图片有效期，单位秒；0 表示长期（永久，不传 expiration），-1 表示自定义。
+export const IMGBB_EXPIRY_OPTIONS: { label: string; value: number }[] = [
+  { label: '长期（永久）', value: 0 },
+  { label: '6 小时', value: 6 * 3600 },
+  { label: '1 天', value: 24 * 3600 },
+  { label: '3 天', value: 3 * 24 * 3600 },
+  { label: '自定义', value: -1 },
+];
 
 const DEFAULT_MODELS: StoredModel[] = [
   {
@@ -66,6 +76,14 @@ export function loadImgbbKey(): string {
 
 export function saveImgbbKey(k: string): void {
   write(KEYS.imgbb, k);
+}
+
+export function loadImgbbExpiry(): number {
+  return read<number>(KEYS.imgbbExpiry, 0);
+}
+
+export function saveImgbbExpiry(seconds: number): void {
+  write(KEYS.imgbbExpiry, seconds);
 }
 
 export function loadHistory(): HistoryItem[] {

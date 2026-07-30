@@ -55,7 +55,22 @@ async function onRequestPostHandler({ request }: { request: Request }) {
     const lib = customLib || getThemeComponentLib(themeId || '');
     const common = getCommonComponents();
 
-    const system = `${SKILL_MD}\n\n# 输出要求\n只输出最终公众号正文 HTML 片段（从 <section> 开始到 </section> 结束），不要包含 <!DOCTYPE>/<html>/<head>/<body>，不要任何解释文字，不要用 markdown 代码块围栏包裹。`;
+    const system = `${SKILL_MD}
+
+# 排版约束（手机端公众号，容器宽度 ≤ 680px，必须严格遵守）
+- 根容器只能有一个 <section>，不要额外套多层外层包裹；section 自身不要写死宽度，交给外层自适应。
+- 严禁使用 position:absolute 或 position:fixed（会造成文字重叠、错位、丢失），需要装饰请用正常文档流或 position:relative + 合理留白。
+- 严禁使用负 margin（如 margin-left:-12px）以及超出 680px 的固定宽度（如 width:1000px）；图片/视频统一 max-width:100%; height:auto。
+- 所有元素 box-sizing 视为 border-box。
+- 横向并排（多列/卡片）一律用 display:flex 且 flex-wrap:wrap，子项加 min-width:0 防止撑破，不要给子项写死大宽度。
+- 字号 14–18px，行高 1.6–1.9，适合手机阅读；不要用超大字号撑破容器。
+- 不要用 table 做复杂布局；如必须用表格，必须 table-layout:fixed; width:100%。
+- 代码块、长链接等可能很宽的内容要使用 overflow-x:auto 或 word-break，绝不能把页面整体撑出横向滚动条。
+- 整体在任意手机宽度下都不应出现横向滚动条或内容被裁切。
+- 不要使用 <script>，不要用会触发微信拦截的外链跳转。
+
+# 输出要求
+只输出最终公众号正文 HTML 片段（从 <section> 开始到 </section> 结束），不要包含 <!DOCTYPE>/<html>/<head>/<body>，不要任何解释文字，不要用 markdown 代码块围栏包裹。`;
 
     const user = `请使用主题「${themeName}」排版以下文章。\n\n该主题的组件库如下（具体 HTML 一律从中取用，不要凭记忆手写）：\n\n${lib}\n\n通用增量库（代码块 / 图片·GIF / 小标签标题，所有主题共用，请套用本主题主色）：\n\n${common}\n\n需要排版的文章：\n\n${article}`;
 

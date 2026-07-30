@@ -35,6 +35,33 @@ body {
   height: auto;
 }
 
+/* 安全网：兜底纠正 LLM 偶尔产出的会撑破手机版式的写法（错位/重叠/丢内容）。 */
+.preview-frame * {
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* 强制把绝对/固定定位改回正常文档流，避免文字重叠。 */
+.preview-frame [style*="absolute" i],
+.preview-frame [style*="fixed" i] {
+  position: static !important;
+}
+
+/* 兜底：任何负 margin 都可能造成内容溢出/错位，统一清零。 */
+.preview-frame [style*="margin" i] {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+/* 长链接/代码块等可能很宽的内容改为内部滚动，而不是撑破整页。 */
+.preview-frame pre,
+.preview-frame code,
+.preview-frame a {
+  white-space: pre-wrap;
+  word-break: break-all;
+  overflow-wrap: anywhere;
+}
+
 /* 让预览里的长链接换行，避免撑破手机版式 */
 .preview-frame a {
   word-break: break-all;

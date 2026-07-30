@@ -23,8 +23,10 @@ interface Props {
   value: string;
   onChange: (v: string) => void;
   imgbbKey: string;
+  imgbbExpiry?: number;
   disabled?: boolean;
   onDocxFile?: (f: File | null) => void;
+  onNeedImgbbConfig?: () => void;
 }
 
 // 维护一个简陋的 undo/redo 栈
@@ -51,8 +53,10 @@ export default function EditorToolbar({
   value,
   onChange,
   imgbbKey,
+  imgbbExpiry,
   disabled,
   onDocxFile,
+  onNeedImgbbConfig,
 }: Props) {
   const docxRef = useRef<HTMLInputElement>(null);
   const imgRef = useRef<HTMLInputElement>(null);
@@ -106,7 +110,7 @@ export default function EditorToolbar({
 
   async function pickImage() {
     if (!imgbbKey.trim()) {
-      Toast.warning('请先在右上角「设置」里填写 imgbb API Key');
+      onNeedImgbbConfig?.();
       return;
     }
     imgRef.current?.click();
@@ -117,7 +121,7 @@ export default function EditorToolbar({
     if (!f) return;
     setUploading(true);
     try {
-      const res = await uploadImage(f, imgbbKey);
+      const res = await uploadImage(f, imgbbKey, imgbbExpiry);
       const snip = `\n![${f.name.replace(/\.[^.]+$/, '')}](${res.url})\n`;
       insertAround('', snip, '');
       Toast.success('图片已插入');
