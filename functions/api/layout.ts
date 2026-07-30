@@ -7,6 +7,7 @@ import { validate } from '../../worker-lib/validate';
 import { extractDocx } from '../../worker-lib/extractDocx';
 import { getThemeComponentLib, getCommonComponents, getThemeById } from '../../worker-lib/themes';
 import { SKILL_MD } from '../../worker-lib/skillAssets';
+import { MOYU_GREEN_SAMPLE } from '../../worker-lib/sampleLayouts';
 
 export const onRequestOptions: any = () => new Response(null, { headers: cors() });
 export const onRequestPost = onRequestPostHandler;
@@ -69,14 +70,17 @@ async function onRequestPostHandler({ request }: { request: Request }) {
 - 整体在任意手机宽度下都不应出现横向滚动条或内容被裁切。
 - 不要使用 <script>，不要用会触发微信拦截的外链跳转。
 
+# 标准排版样例（摸鱼绿主题，供结构与风格参考）
+以下是一份该主题的标准排版样例，请严格模仿其整体结构、章节样式、组件用法与排版密度（封面 → 目录 → 引言卡片 → 分章「大号数字编号 + PART 标签 + 章节标题 + 英文副标」→ 正文段落「关键词下划线高亮 + 重点词主色加粗」→ 引用/说明卡片 → 圆角标签要点列表 → 表格「绿头斑马纹」→ 金句卡片 → 结语 → 署名 → 互动三连）：
+${MOYU_GREEN_SAMPLE}
+注意：配色请改用当前主题「${themeName}」的主色；该样例仅用于学习结构与风格，你必须基于「需要排版的文章」的实际内容重新排版，不得照抄样例文字。
+
 # 内容完整性要求（必须严格遵守，否则视为失败）
-- 必须逐段保留原文的完整正文，不得省略、不得摘要、不得把正文折叠成只显示小标题的卡片或目录。
-- 每个章节/小节除了标题外，必须包含该小节下的全部段落文字，按原文顺序连续展开；禁止只输出标题或只保留每段第一句话。
-- 主题组件库里的卡片/分块/图标组件只能用于装饰小节标题或突出重点，不能用来替代正文段落；正文段落必须使用普通 <p>、<blockquote>、<ul>/<ol> 等文档流元素完整呈现。
-- 严禁生成任何形式的目录、导航、横向滚动卡片、PART 分块、章节预览卡片。章节标题直接用简单样式呈现，不要把章节列表做成可滑动的卡片墙。
-- 严禁扩写、改写、编造数据、日期、案例、引言或添加原文没有的表格。必须忠于原文，只排版不创作。
+- 必须完整呈现原文的所有章节与要点，不得省略、不得只保留标题或每节第一句话；正文按原文顺序连续展开。
+- 允许参考样例的丰富结构（封面、目录、金句、表格、署名、互动区）并在原文基础上适度扩写使科普更完整；但核心事实与数据须以原文为依据，不要无中生有地编造具体人名、机构或离谱数字。
+- 主题组件库里的卡片/分块组件用于装饰小节标题或突出重点，不能替代正文段落；正文段落使用普通 <p>、<blockquote>、<ul>/<ol> 等文档流元素完整呈现。
 - 输出必须是纯 HTML，不能残留任何 Markdown 语法（如 **粗体**、*斜体*、# 标题、- 列表等）。
-- 如果原文较长，优先保证所有文字都出现，宁可减少装饰性组件数量，也不能牺牲正文完整性。
+- 优先保证所有文字都完整输出，绝不允许截断正文；如果内容较长，宁可保留全部文字、减少装饰，也不能让文章在中途断掉。
 
 # 文字包裹规范（公众号粘贴必需，违反会丢字 / 乱码）
 - 所有正文文字必须用「空 leaf」包裹：<span leaf="">这里是文字</span>。leaf 属性值必须是空字符串 ""，文字写在标签体里。
@@ -120,8 +124,7 @@ async function onRequestPostHandler({ request }: { request: Request }) {
       }
     }
 
-    // 最终兜底：模型若仍不听从提示词，直接清理目录块与 Markdown 残留
-    html = removeTocScroll(html);
+    // 最终兜底：清理残留的 Markdown 语法（目录/扩写是允许的，不在此移除）
     html = fixMarkdownResiduals(html);
     result = validate(html);
 
@@ -145,15 +148,6 @@ function fixLeafSpans(html: string): string {
       const open = attrs ? `<span ${attrs} leaf="">` : '<span leaf="">';
       return `${open}${val}</span>`;
     }
-  );
-}
-
-// 兜底移除：模型常不听从提示词，仍然生成 "8 Parts + Conclusion" 横向滚动目录。
-// 该目录块通常包含 overflow-x:scroll 与连续 PART 卡片，直接移除可节省 token 并避免折叠。
-function removeTocScroll(html: string): string {
-  return html.replace(
-    /<section\b[^>]*>(?:\s*<!--[\s\S]*?-->\s*)?<section\b[^>]*>[\s\S]*?overflow-x:\s*scroll[\s\S]*?(?:PART\s+\d{2}|Parts\s*\+\s*Conclusion)[\s\S]*?<\/section>\s*<\/section>/gi,
-    ''
   );
 }
 
