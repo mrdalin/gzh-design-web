@@ -3,6 +3,7 @@ import { Button, Space, Toast, Typography, Banner, Spin } from '@douyinfe/semi-u
 import { IconCopy, IconRefresh } from '@douyinfe/semi-icons';
 import type { ValidationResult } from '../types';
 import { copyRichText } from '../lib/clipboard';
+import { countWords } from '../lib/wordCount';
 
 const { Text, Title, Paragraph } = Typography;
 
@@ -49,7 +50,7 @@ export default function PreviewPanel({
         }}
       >
         <Title heading={6} style={{ margin: 0 }}>
-          手机预览{title ? ` · ${title}` : ''}
+          手机预览{title ? ` · ${title}` : ''} · 约 {countWords(html)} 字
         </Title>
         <Space>
           <Button theme="light" icon={<IconRefresh />} onClick={onRegenerate} disabled={loading}>

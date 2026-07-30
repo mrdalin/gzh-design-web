@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Typography } from '@douyinfe/semi-ui';
 import EditorToolbar, { initHistory } from './EditorToolbar';
+import { countWords } from '../lib/wordCount';
 
 const { Text } = Typography;
 
@@ -9,10 +10,12 @@ interface Props {
   onChange: (v: string) => void;
   imgbbKey: string;
   disabled?: boolean;
+  textareaRef?: React.RefObject<HTMLTextAreaElement>;
 }
 
-export default function MarkdownEditor({ value, onChange, imgbbKey, disabled }: Props) {
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+export default function MarkdownEditor({ value, onChange, imgbbKey, disabled, textareaRef: externalRef }: Props) {
+  const internalRef = useRef<HTMLTextAreaElement>(null);
+  const textareaRef = externalRef ?? internalRef;
 
   useEffect(() => {
     initHistory(value);
@@ -30,7 +33,7 @@ export default function MarkdownEditor({ value, onChange, imgbbKey, disabled }: 
         }}
       >
         <Text strong>Markdown 编辑器</Text>
-        <Text type="tertiary" size="small">可二次编辑</Text>
+        <Text type="tertiary" size="small">可二次编辑 · 约 {countWords(value)} 字</Text>
       </div>
 
       <EditorToolbar

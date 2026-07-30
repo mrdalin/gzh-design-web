@@ -14,6 +14,7 @@ import {
   IconDelete,
 } from '@douyinfe/semi-icons';
 import { uploadImage } from '../lib/api';
+import { countWords } from '../lib/wordCount';
 
 const { Text } = Typography;
 
@@ -170,7 +171,7 @@ export default function RichEditor({ html, onChange, imgbbKey, disabled }: Props
   const btnStyle = { padding: '6px 8px' };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
       <div
         style={{
           display: 'flex',
@@ -181,7 +182,9 @@ export default function RichEditor({ html, onChange, imgbbKey, disabled }: Props
         }}
       >
         <Text strong>文案内容</Text>
-        <Text type="tertiary" size="small">支持从 Word 直接带格式粘贴</Text>
+        <Text type="tertiary" size="small">
+          支持从 Word 直接带格式粘贴 · 约 {countWords(html)} 字
+        </Text>
       </div>
 
       <div

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Button,
   Typography,
@@ -59,6 +59,10 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [history, setHistory] = useState<HistoryItem[]>([]);
+
+  // 指向中间 Markdown 编辑器的 <textarea>，用于「生成排版」时读取真实 DOM 内容，
+  // 避免受 React 状态与 DOM 不同步影响（曾经出现「界面有内容却提示缺少文章内容」）。
+  const mdTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   const [historyVisible, setHistoryVisible] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
@@ -158,9 +162,15 @@ export default function App() {
       Toast.warning('请先在「配置 API」里配置并选择一个可用模型');
       return;
     }
-    if (!article.trim()) {
+    // 以「中间 Markdown 编辑器实时 DOM 内容」为准，确保界面所见即所得。
+    const liveArticle = (mdTextareaRef.current?.value ?? article).trim();
+    if (!liveArticle) {
       Toast.warning('请先在中间 Markdown 编辑器里输入或转换文章');
       return;
+    }
+    // 若 DOM 与状态不一致（理论上不该发生），以 DOM 为准同步回状态。
+    if (mdTextareaRef.current && mdTextareaRef.current.value !== article) {
+      setArticle(mdTextareaRef.current.value);
     }
     if (!selectedThemeId) {
       Toast.warning('请在顶部选择一个主题');
@@ -174,7 +184,7 @@ export default function App() {
     setLoading(true);
     try {
       const res = await layout({
-        article,
+        article: liveArticle,
         themeId: selectedThemeId === 'custom' ? undefined : selectedThemeId,
         customLib: selectedThemeId === 'custom' ? customLib : undefined,
         model: {
@@ -291,12 +301,12 @@ export default function App() {
               block
               onClick={convertToMarkdown}
               icon={<IconArrowRight />}
-              style={{ marginTop: 12 }}
+              style={{ marginTop: 12, flexShrink: 0 }}
             >
               转换为 Markdown →
             </Button>
 
-            <div style={{ marginTop: 12 }}>
+            <div style={{ marginTop: 12, flexShrink: 0 }}>
               <Input
                 value={prompt}
                 onChange={(v) => setPrompt(v)}
@@ -320,7 +330,7 @@ export default function App() {
         {/* 中：Markdown 编辑器 */}
         <main className="app-md">
           <div className="app-md-inner">
-            <MarkdownEditor value={article} onChange={setArticle} imgbbKey={imgbbKey} disabled={loading} />
+            <MarkdownEditor value={article} onChange={setArticle} imgbbKey={imgbbKey} disabled={loading} textareaRef={mdTextareaRef} />
             <Button
               theme="solid"
               size="large"
@@ -328,7 +338,7 @@ export default function App() {
               onClick={generate}
               loading={loading}
               icon={<IconSend />}
-              style={{ marginTop: 12 }}
+              style={{ marginTop: 12, flexShrink: 0 }}
             >
               生成排版 →
             </Button>
