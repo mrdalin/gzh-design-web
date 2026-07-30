@@ -1,22 +1,24 @@
 // POST /api/upload
 // 图床代理：把用户上传的图片转发到 imgbb（用户自带 key，BYOK），返回可访问 URL。
 // 经 Worker 代理以避免浏览器直连 imgbb 的 CORS 问题，且 key 仅本次请求使用。
+//
+// 入站统一用 JSON（image 为 base64 data URL），避免 Cloudflare Pages Functions
+// 的 request.formData() 无法解析浏览器 multipart 的问题。出站到 imgbb 仍用 multipart。
 
 export const onRequestOptions: any = () => new Response(null, { headers: cors() });
 export const onRequestPost = onRequestPostHandler;
 
 async function onRequestPostHandler({ request }: { request: Request }) {
   try {
-    const form = await request.formData();
-    const file = form.get('image');
-    const key = (form.get('imgbbApiKey') as string) || (form.get('key') as string);
-    if (!file || typeof file === 'object' === false || !('arrayBuffer' in (file as any))) {
-      return json({ error: '缺少图片文件' }, 400);
-    }
+    const body: any = await request.json();
+    const imageB64: string | null = body.image || null;
+    const key: string | null = body.key || null;
+
+    if (!imageB64) return json({ error: '缺少图片文件' }, 400);
     if (!key) return json({ error: '缺少 imgbb API key' }, 400);
 
     const fd = new FormData();
-    fd.append('image', file as Blob);
+    fd.append('image', imageB64);
 
     const resp = await fetch(`https://api.imgbb.com/1/upload?key=${encodeURIComponent(key)}`, {
       method: 'POST',

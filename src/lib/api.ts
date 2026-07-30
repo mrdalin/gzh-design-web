@@ -13,22 +13,22 @@ export async function fetchThemes(): Promise<Theme[]> {
 
 export async function layout(params: {
   article?: string;
-  file?: File;
   themeId?: string;
   customLib?: string;
   model: ModelConfig;
 }): Promise<LayoutResult> {
-  const fd = new FormData();
-  if (params.file) {
-    fd.append('file', params.file);
-  } else {
-    fd.append('article', params.article || '');
-  }
-  if (params.themeId) fd.append('themeId', params.themeId);
-  if (params.customLib) fd.append('customLib', params.customLib);
-  fd.append('model', JSON.stringify(params.model));
-
-  const res = await fetch('/api/layout', { method: 'POST', body: fd });
+  // 注意：Cloudflare Pages Functions 的 request.formData() 在此环境无法正确解析
+  // 浏览器提交的 multipart/form-data（article 字段会丢失），因此统一改用 JSON。
+  const res = await fetch('/api/layout', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      article: params.article || '',
+      themeId: params.themeId,
+      customLib: params.customLib,
+      model: params.model,
+    }),
+  });
   const data: any = await res.json();
   if (!res.ok) throw new Error(data.error || '排版失败');
   return data as LayoutResult;
@@ -38,13 +38,25 @@ export async function uploadImage(
   file: File,
   key: string
 ): Promise<{ url: string; deleteUrl?: string; thumb?: string }> {
-  const fd = new FormData();
-  fd.append('image', file);
-  fd.append('key', key);
-  const res = await fetch('/api/upload', { method: 'POST', body: fd });
+  // 同样规避 multipart 解析问题：图片以 base64 data URL 走 JSON。
+  const base64 = await fileToBase64(file);
+  const res = await fetch('/api/upload', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ image: base64, key }),
+  });
   const data: any = await res.json();
   if (!res.ok) throw new Error(data.error || '图片上传失败');
   return data;
+}
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(new Error('读取图片失败'));
+    reader.readAsDataURL(file);
+  });
 }
 
 export async function generateTheme(
