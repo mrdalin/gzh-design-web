@@ -6,7 +6,6 @@ import {
   Modal,
   Space,
   Input,
-  Dropdown,
 } from '@douyinfe/semi-ui';
 import {
   IconCode,
@@ -397,19 +396,12 @@ export default function App() {
               源码
             </Button>
           )}
-          <Dropdown trigger="click" position="bottomRight">
-            <Button theme="borderless" icon={<IconSetting />}>
-              配置
-            </Button>
-            <Dropdown.Menu>
-              <Dropdown.Item icon={<IconImage />} onClick={() => setImgbbVisible(true)}>
-                📷 图片 API
-              </Dropdown.Item>
-              <Dropdown.Item icon={<IconSetting />} onClick={() => setModelVisible(true)}>
-                🤖 模型 API
-              </Dropdown.Item>
-            </Dropdown.Menu>
-          </Dropdown>
+          <Button theme="borderless" icon={<IconImage />} onClick={() => setImgbbVisible(true)}>
+            图片 API
+          </Button>
+          <Button theme="borderless" icon={<IconSetting />} onClick={() => setModelVisible(true)}>
+            模型 API
+          </Button>
         </Space>
       </header>
 
