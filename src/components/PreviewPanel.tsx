@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Button, Space, Toast, Typography, Banner, Spin, Modal } from '@douyinfe/semi-ui';
+import { Button, Space, Toast, Typography, Banner, Spin, Modal, Select } from '@douyinfe/semi-ui';
 import {
   IconCopy,
   IconRefresh,
@@ -8,12 +8,20 @@ import {
   IconGridView,
 } from '@douyinfe/semi-icons';
 import JSZip from 'jszip';
-import type { ValidationResult } from '../types';
+import type { ValidationResult, StoredModel } from '../types';
 import { copyRichText } from '../lib/clipboard';
 import { countWords } from '../lib/wordCount';
 import { toCanvas, toPng } from '../lib/htmlToImage';
 
 const { Text, Title, Paragraph } = Typography;
+
+interface StreamState {
+  phase: string;
+  partial: string;
+  chars: number;
+  inputTokens?: number;
+  outputTokens?: number;
+}
 
 interface Props {
   html: string;
@@ -21,6 +29,12 @@ interface Props {
   loading: boolean;
   validation: ValidationResult | null;
   onRegenerate: () => void;
+  // 流式生成状态（边生成边显示）
+  stream?: StreamState | null;
+  // 底部聊天式模型栏
+  models?: StoredModel[];
+  selectedModelId?: string;
+  onModelSelect?: (id: string) => void;
 }
 
 function sanitizeFileName(s: string): string {
@@ -43,16 +57,47 @@ function downloadDataUrl(dataUrl: string, fileName: string) {
   a.click();
 }
 
+function StreamView({ stream }: { stream: StreamState }) {
+  return (
+    <div className="stream-view">
+      <div className="stream-status">
+        <span className="stream-dot" />
+        <Text strong style={{ color: 'var(--semi-color-primary)' }}>
+          {stream.phase}
+        </Text>
+      </div>
+      <div className="stream-progress">
+        <div className="stream-bar" />
+      </div>
+      <div className="stream-meta">
+        已生成 <b>{stream.chars}</b> 字
+        {stream.outputTokens != null && <> · 输出 <b>{stream.outputTokens}</b> tokens</>}
+        {stream.inputTokens != null && <> · 输入 <b>{stream.inputTokens}</b> tokens</>}
+      </div>
+      <div
+        className="preview-frame stream-live"
+        dangerouslySetInnerHTML={{ __html: stream.partial }}
+      />
+    </div>
+  );
+}
+
 export default function PreviewPanel({
   html,
   title,
   loading,
   validation,
   onRegenerate,
+  stream,
+  models = [],
+  selectedModelId,
+  onModelSelect,
 }: Props) {
   const frameRef = useRef<HTMLDivElement>(null);
   const [shotVisible, setShotVisible] = useState(false);
   const [capturing, setCapturing] = useState(false);
+
+  const shownHtml = loading && stream ? stream.partial : html;
 
   async function handleCopy() {
     if (!html) {
@@ -150,15 +195,13 @@ export default function PreviewPanel({
           padding: '10px 12px',
           borderBottom: '1px solid var(--semi-color-border)',
           background: 'var(--semi-color-bg-1)',
+          flexShrink: 0,
         }}
       >
         <Title heading={6} style={{ margin: 0 }}>
-          手机预览 · 约 {countWords(html)} 字
+          手机预览 · 约 {countWords(shownHtml)} 字
         </Title>
         <Space>
-          <Button theme="light" icon={<IconRefresh />} onClick={onRegenerate} disabled={loading}>
-            重新生成
-          </Button>
           <Button theme="solid" icon={<IconCopy />} onClick={handleCopy} disabled={!html}>
             复制排版
           </Button>
@@ -172,20 +215,8 @@ export default function PreviewPanel({
       </div>
 
       <div style={{ flex: 1, overflow: 'auto', background: 'var(--semi-color-fill-0)' }}>
-        {loading ? (
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              paddingTop: 80,
-            }}
-          >
-            <Spin size="large" />
-            <Text style={{ marginTop: 12, color: 'var(--semi-color-primary)' }}>
-              正在排版，请稍候…
-            </Text>
-          </div>
+        {loading && stream ? (
+          <StreamView stream={stream} />
         ) : !html ? (
           <div
             style={{
@@ -239,6 +270,24 @@ export default function PreviewPanel({
           )}
         </div>
       )}
+
+      {/* 底部聊天式栏：模型选择 + 重新生成 */}
+      <div className="preview-footer">
+        <Select
+          size="small"
+          style={{ width: 180 }}
+          value={selectedModelId}
+          onChange={(v) => onModelSelect?.(v as string)}
+          optionList={models.map((m) => ({
+            label: m.apiKey ? m.model : (m.displayName || m.model),
+            value: m.id,
+          }))}
+          placeholder="选择模型"
+        />
+        <Button theme="light" icon={<IconRefresh />} onClick={onRegenerate} disabled={loading}>
+          重新生成
+        </Button>
+      </div>
 
       <Modal
         title="选择截图方式"

@@ -81,21 +81,28 @@ function deriveTitle(article: string): string {
 }
 
 // ─── 客户端直连模式：浏览器直接调 LLM，本地后处理，最后交服务端校验 ────
-export async function layoutClientSide(params: {
+// ─── 流式相关：浏览器端直连 + SSE 解析 ─────────────────────────────────────
+// 生成过程中实时清理（去掉引导 ``` 围栏、抽取 <section>、修复 leaf 包裹），
+// 用于预览区「边生成边显示」的 live 效果。幂等，可重复调用。
+export function liveClean(s: string): string {
+  s = s.replace(/^\s*```(?:html)?\s*/i, '');
+  s = stripFences(s);
+  s = fixLeafSpans(s);
+  return s;
+}
+
+// 提示词与 layoutClientSide 共用，避免两处漂移。
+function buildLayoutPrompt(params: {
   article: string;
   themeId?: string;
   customLib?: string;
-  model: ModelConfig;
   themes: Theme[];
-}): Promise<LayoutResult> {
-  // 1) 从已加载的主题数据中取组件库（不再请求服务端）
+}): { system: string; user: string } {
   const theme = params.themes.find((t) => t.id === params.themeId);
   const themeName = params.customLib ? '自定义主题' : theme?.name || '摸鱼绿';
   const lib = params.customLib || theme?.componentLib || '';
-  // 通用组件库：从主题数据中取（已由后端 /api/themes 附加到每个主题上）
   const common = params.themes[0]?.commonComponents || '';
 
-  // 2) 构建提示词（与后端 layout.ts 保持一致）
   const system = [
     `# 排版约束（手机端公众号，容器宽度 ≤ 680px，必须严格遵守）
 - 根容器只能有一个 <section>，不要额外套多层外层包裹；section 自身不要写死宽度，交给外层自适应。
@@ -138,6 +145,149 @@ export async function layoutClientSide(params: {
   ].join('\n\n');
 
   const user = `请使用主题「${themeName}」排版以下文章。\n\n该主题的组件库如下（具体 HTML 一律从中取用，不要凭记忆手写）：\n\n${lib}\n\n通用增量库（代码块 / 图片·GIF / 小标签标题，所有主题共用，请套用本主题主色）：\n\n${common}\n\n需要排版的文章：\n\n${params.article}`;
+
+  return { system, user };
+}
+
+// 流式调用 OpenAI 兼容接口（SSE）。通过回调实时上报首 token / 增量内容 / token 用量。
+async function callLLMStream(
+  model: ModelConfig,
+  messages: { role: string; content: string }[],
+  handlers?: {
+    onFirstToken?: () => void;
+    onChunk?: (full: string) => void;
+    onUsage?: (u: { prompt_tokens: number; completion_tokens: number }) => void;
+    signal?: AbortSignal;
+  },
+  opts?: { maxTokens?: number }
+): Promise<string> {
+  const base = model.baseUrl.replace(/\/+$/, '');
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 180_000);
+  const signal = handlers?.signal ?? controller.signal;
+  try {
+    const resp = await fetch(`${base}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${model.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: model.model,
+        messages,
+        temperature: 0.7,
+        max_tokens: opts?.maxTokens ?? 32768,
+        stream: true,
+        stream_options: { include_usage: true },
+      }),
+      signal,
+    });
+    clearTimeout(timer);
+    if (!resp.ok) {
+      const errText = await resp.text().catch(() => '');
+      throw new Error(`LLM 错误 (${resp.status}): ${errText.slice(0, 300)}`);
+    }
+    if (!resp.body) throw new Error('模型未返回流式数据');
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let full = '';
+    let first = true;
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      if (value) buffer += decoder.decode(value, { stream: true });
+      let nl: number;
+      while ((nl = buffer.indexOf('\n')) >= 0) {
+        const line = buffer.slice(0, nl).trim();
+        buffer = buffer.slice(nl + 1);
+        if (!line.startsWith('data:')) continue;
+        const data = line.slice(5).trim();
+        if (data === '[DONE]') break;
+        try {
+          const json: any = JSON.parse(data);
+          if (json.usage) handlers?.onUsage?.(json.usage);
+          const delta = json?.choices?.[0]?.delta?.content || '';
+          if (delta) {
+            if (first) {
+              first = false;
+              handlers?.onFirstToken?.();
+            }
+            full += delta;
+            handlers?.onChunk?.(full);
+          }
+        } catch {
+          // 忽略无法解析的分片（部分服务会发注释/心跳）
+        }
+      }
+    }
+    if (!full.trim()) throw new Error('模型返回空内容，请重试或更换模型');
+    return full;
+  } catch (err: any) {
+    clearTimeout(timer);
+    if (err.name === 'AbortError') throw new Error('模型响应超时（180秒），请缩短文章或换更快的模型');
+    throw err;
+  }
+}
+
+// 客户端直连（流式版）：浏览器直接调 LLM 并实时回传进度，结束后本地后处理 + 服务端校验。
+export async function layoutClientSideStream(
+  params: {
+    article: string;
+    themeId?: string;
+    customLib?: string;
+    model: ModelConfig;
+    themes: Theme[];
+  },
+  handlers?: {
+    onFirstToken?: () => void;
+    onChunk?: (full: string) => void;
+    onUsage?: (u: { prompt_tokens: number; completion_tokens: number }) => void;
+    signal?: AbortSignal;
+  }
+): Promise<LayoutResult> {
+  const { system, user } = buildLayoutPrompt(params);
+  const raw = await callLLMStream(
+    params.model,
+    [
+      { role: 'system', content: system },
+      { role: 'user', content: user },
+    ],
+    handlers
+  );
+  console.log('[客户端直连·流] LLM 返回, 原始长度:', raw.length);
+
+  let html = stripFences(raw);
+  html = fixLeafSpans(html);
+  html = fixMarkdownResiduals(html);
+
+  const postResp = await fetch('/api/postprocess', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ html }),
+  });
+  if (!postResp.ok) {
+    console.warn('[客户端直连·流] /api/postprocess 不可用, 使用本地结果');
+    return { html, title: deriveTitle(params.article), validation: { errors: [], warnings: [], leafCount: 0 } };
+  }
+  const postData: any = await postResp.json();
+  return {
+    html: postData.html || html,
+    title: deriveTitle(params.article),
+    validation: postData.validation || { errors: [], warnings: [], leafCount: 0 },
+  };
+}
+
+export async function layoutClientSide(params: {
+  article: string;
+  themeId?: string;
+  customLib?: string;
+  model: ModelConfig;
+  themes: Theme[];
+}): Promise<LayoutResult> {
+  const { system, user } = buildLayoutPrompt(params);
+
+
 
   console.log('[客户端直连] 开始调用 LLM', { model: params.model.model, baseUrl: params.model.baseUrl, articleLen: params.article.length });
 

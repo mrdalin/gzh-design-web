@@ -3,7 +3,6 @@ import {
   Button,
   Typography,
   Toast,
-  Select,
   Modal,
   Space,
   Input,
@@ -18,7 +17,7 @@ import {
   IconImage,
 } from '@douyinfe/semi-icons';
 import type { HistoryItem, LayoutResult, StoredModel, Theme } from './types';
-import { fetchThemes, layoutClientSide, generateArticle } from './lib/api';
+import { fetchThemes, layoutClientSideStream, liveClean, generateArticle } from './lib/api';
 import { htmlToMarkdown } from './lib/htmlToMarkdown';
 import {
   loadModels,
@@ -75,6 +74,8 @@ export default function App() {
   // 指向中间 Markdown 编辑器的 <textarea>，用于「生成排版」时读取真实 DOM 内容，
   // 避免受 React 状态与 DOM 不同步影响（曾经出现「界面有内容却提示缺少文章内容」）。
   const mdTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const [gen, setGen] = useState<{ phase: string; partial: string; chars: number; inputTokens?: number; outputTokens?: number } | null>(null);
+  const playRef = useRef<number | null>(null);
 
   const [historyVisible, setHistoryVisible] = useState(false);
   const [imgbbVisible, setImgbbVisible] = useState(false);
@@ -182,7 +183,6 @@ export default function App() {
       Toast.warning('请先在中间 Markdown 编辑器里输入或转换文章');
       return;
     }
-    // 若 DOM 与状态不一致（理论上不该发生），以 DOM 为准同步回状态。
     if (mdTextareaRef.current && mdTextareaRef.current.value !== article) {
       setArticle(mdTextareaRef.current.value);
     }
@@ -195,9 +195,16 @@ export default function App() {
       return;
     }
 
+    setGen({
+      phase: '正在唤醒排版小精灵 ✨',
+      partial: '',
+      chars: 0,
+      inputTokens: undefined,
+      outputTokens: undefined,
+    });
     setLoading(true);
     const genStartTime = Date.now();
-    console.log('[排版诊断] 开始生成', {
+    console.log('[排版诊断] 开始生成（流式直连）', {
       articleLen: liveArticle.length,
       themeId: selectedThemeId,
       model: m.model,
@@ -205,7 +212,22 @@ export default function App() {
       version: APP_VERSION,
     });
 
-    // 构建统一的模型参数（服务端/客户端共用）
+    // 首次 token 到达前循环播放俏皮话，缓解等待焦虑
+    const playful = [
+      '正在唤醒排版小精灵 ✨',
+      '让文字们排好队 📝',
+      '给重点词画下划线 🖍️',
+      '调色板已就位 🎨',
+      '金句卡片折叠中 🃏',
+      '封面正在绘制 🖼️',
+    ];
+    let pi = 0;
+    if (playRef.current) clearInterval(playRef.current);
+    playRef.current = window.setInterval(() => {
+      pi = (pi + 1) % playful.length;
+      setGen((g) => (g && !g.partial ? { ...g, phase: playful[pi] } : g));
+    }, 2400);
+
     const modelParams = {
       id: m.id,
       displayName: m.displayName,
@@ -215,18 +237,62 @@ export default function App() {
     };
 
     try {
-      // ── 直接使用客户端直连模式（浏览器直接调 LLM，绕过 CF 30s 超时限制）────
-      console.log('[排版诊断] 模式=客户端直连, 直接调用 LLM ...');
+      // 客户端直连（流式）：浏览器直接调 LLM，绕过 CF 30s 超时限制
+      console.log('[排版诊断] 模式=客户端直连·流, 直接调用 LLM ...');
       const t0 = Date.now();
       const themesWithCommon = themes.map((t) => ({ ...t, commonComponents }));
-      const res = await layoutClientSide({
-        article: liveArticle,
-        themeId: selectedThemeId === 'custom' ? undefined : selectedThemeId,
-        customLib: selectedThemeId === 'custom' ? customLib : undefined,
-        model: modelParams,
-        themes: themesWithCommon,
-      });
-      console.log('[排版诊断] 客户端直连成功, 耗时', Date.now() - t0, 'ms, html长度:', res.html?.length || 0);
+      const res = await layoutClientSideStream(
+        {
+          article: liveArticle,
+          themeId: selectedThemeId === 'custom' ? undefined : selectedThemeId,
+          customLib: selectedThemeId === 'custom' ? customLib : undefined,
+          model: modelParams,
+          themes: themesWithCommon,
+        },
+        {
+          onFirstToken: () => {
+            if (playRef.current) {
+              clearInterval(playRef.current);
+              playRef.current = null;
+            }
+            setGen((g) => (g ? { ...g, phase: '🎨 正在施展排版魔法…' } : g));
+          },
+          onChunk: (full) => {
+            const clean = liveClean(full);
+            const chars = clean.length;
+            setGen((g) =>
+              g
+                ? {
+                    ...g,
+                    partial: clean,
+                    chars,
+                    phase:
+                      chars < 300
+                        ? '📝 正在构思文章骨架…'
+                        : chars < 2000
+                        ? '🎨 正在套用主题配色…'
+                        : chars < 6000
+                        ? '✍️ 正在逐段排版正文…'
+                        : '🧩 正在拼接章节模块…',
+                  }
+                : g
+            );
+          },
+          onUsage: (u) =>
+            setGen((g) =>
+              g
+                ? { ...g, inputTokens: u.prompt_tokens, outputTokens: u.completion_tokens }
+                : g
+            ),
+        }
+      );
+      console.log('[排版诊断] 客户端直连·流成功, 耗时', Date.now() - t0, 'ms, html长度:', res.html?.length || 0);
+
+      if (playRef.current) {
+        clearInterval(playRef.current);
+        playRef.current = null;
+      }
+      setGen((g) => (g ? { ...g, phase: '🪄 正在打磨细节（清理残留 / 校验）…' } : g));
 
       // 前端最终防线：防止空结果覆盖已有预览并写入空白历史
       if (!res.html || !res.html.trim()) {
@@ -257,7 +323,6 @@ export default function App() {
         message: e?.message,
         stack: e?.stack?.slice(0, 500),
       });
-      // 给用户一个可操作的诊断提示
       const detail = e?.message || '未知错误';
       let userMsg = detail;
       if (detail.includes('Failed to fetch') || detail.includes('网络请求失败') || detail.includes('无法连接')) {
@@ -265,7 +330,12 @@ export default function App() {
       }
       Toast.error(userMsg);
     } finally {
+      if (playRef.current) {
+        clearInterval(playRef.current);
+        playRef.current = null;
+      }
       setLoading(false);
+      setGen(null);
     }
   }
 
@@ -315,17 +385,6 @@ export default function App() {
           </Text>
         </div>
         <Space>
-          <Select
-            style={{ width: 160 }}
-            size="small"
-            value={selectedModelId}
-            onChange={(v) => handleModelSelect(v as string)}
-            optionList={models.map((m) => ({
-              label: m.apiKey ? m.model : (m.displayName || m.model),
-              value: m.id,
-            }))}
-            placeholder="选择模型"
-          />
           <Button theme="borderless" icon={<IconHistory />} onClick={() => setHistoryVisible(true)}>
             历史
           </Button>
@@ -434,13 +493,17 @@ export default function App() {
 
         {/* 右：预览 */}
         <aside className="app-preview">
-          <PreviewPanel
-            html={result?.html || ''}
-            title={result?.title || ''}
-            loading={loading}
-            validation={result?.validation || null}
-            onRegenerate={generate}
-          />
+      <PreviewPanel
+        html={result?.html || ''}
+        title={result?.title || ''}
+        loading={loading}
+        validation={result?.validation || null}
+        onRegenerate={generate}
+        stream={gen}
+        models={models}
+        selectedModelId={selectedModelId}
+        onModelSelect={handleModelSelect}
+      />
         </aside>
       </div>
 
