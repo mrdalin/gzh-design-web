@@ -25,6 +25,13 @@ interface Props {
   onSelect: (id: string) => void;
 }
 
+// 预设模型的官方「开通 / 获取 API Key」页面，供未配置 Key 的用户一键直达
+const PRESET_API_URLS: Record<string, string> = {
+  deepseek: 'https://platform.deepseek.com/api_keys',
+  kimi: 'https://platform.moonshot.cn/console/api-keys',
+  'agnes-25-flash': 'https://platform.agnes-ai.cn/settings/apiKeys',
+};
+
 // 自定义模型字段固定顺序：显示名称（可选）→ API 地址 → API KEY → 模型名称
 function emptyCustom(): StoredModel {
   return {
@@ -136,6 +143,16 @@ export default function ModelManager({
               <span>
                 <b>{m.displayName || m.model}</b>
                 {m.preset && <Tag size="small" color="blue" style={{ marginLeft: 6 }}>预设</Tag>}
+                {m.preset && !m.apiKey && PRESET_API_URLS[m.id] && (
+                  <a
+                    href={PRESET_API_URLS[m.id]}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ fontSize: 12, color: 'var(--semi-color-primary)', marginLeft: 8 }}
+                  >
+                    开通 API
+                  </a>
+                )}
               </span>
             </Space>
             <Space>
