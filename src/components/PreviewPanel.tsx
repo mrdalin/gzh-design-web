@@ -31,6 +31,8 @@ interface Props {
   onRegenerate: () => void;
   // 流式生成状态（边生成边显示）
   stream?: StreamState | null;
+  // 生成完成后的 token 用量（留存展示，gen 清空后仍保留）
+  usage?: { inputTokens?: number; outputTokens?: number } | null;
   // 重新生成按钮：排版完成后 1s 才可点击
   readyForRegenerate?: boolean;
   // 联动滚动：接收预览区滚动容器的 ref
@@ -96,6 +98,7 @@ export default function PreviewPanel({
   validation,
   onRegenerate,
   stream,
+  usage,
   readyForRegenerate = false,
   scrollRef,
 }: Props) {
@@ -277,11 +280,16 @@ export default function PreviewPanel({
       {/* 生成中状态条：固定显示在滚动区下方、底部栏上方，生成完成后自动消失 */}
       {loading && stream && <StreamStatusBar stream={stream} />}
 
-      {/* 底部栏：左侧校验小字 + 右侧重新生成按钮 */}
+      {/* 底部栏：左侧校验小字 + 本次 token 用量 + 右侧重新生成按钮 */}
       <div className="preview-footer" style={{ justifyContent: 'space-between' }}>
-        {validationText ? (
+        {validationText || (usage && !loading) ? (
           <Text type="tertiary" size="small" style={{ opacity: 0.7, userSelect: 'none', whiteSpace: 'nowrap' }}>
             {validationText}
+            {usage && !loading && usage.outputTokens != null && (
+              <>
+                {validationText ? ' · ' : ''}本次消耗 输入 <b>{usage.inputTokens}</b> / 输出 <b>{usage.outputTokens}</b> tokens
+              </>
+            )}
           </Text>
         ) : <span />}
         <Button

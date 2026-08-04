@@ -21,6 +21,7 @@ import { fetchThemes, layoutClientSideStream, liveClean, generateArticle, upload
 import { htmlToMarkdown } from './lib/htmlToMarkdown';
 import { markdownToHtml } from './lib/markdownToHtml';
 import { useScrollSync } from './lib/useScrollSync';
+import { countWords } from './lib/wordCount';
 import mammoth from 'mammoth';
 import {
   loadModels,
@@ -96,6 +97,8 @@ export default function App() {
   // 避免受 React 状态与 DOM 不同步影响（曾经出现「界面有内容却提示缺少文章内容」）。
   const mdTextareaRef = useRef<HTMLTextAreaElement>(null);
   const [gen, setGen] = useState<{ phase: string; partial: string; chars: number; inputTokens?: number; outputTokens?: number } | null>(null);
+  // 生成完成后的 token 用量，留存于底部栏展示（gen 在 finally 中清空，故单独保存）
+  const [lastUsage, setLastUsage] = useState<{ inputTokens?: number; outputTokens?: number } | null>(null);
   const playRef = useRef<number | null>(null);
 
   // 防止「富文本 → Markdown → 富文本」回环：当变更源自富文本编辑器时，临时屏蔽
@@ -357,6 +360,7 @@ export default function App() {
       inputTokens: undefined,
       outputTokens: undefined,
     });
+    setLastUsage(null);
     setLoading(true);
     setReadyForRegen(false);
     const genStartTime = Date.now();
@@ -415,7 +419,7 @@ export default function App() {
           },
           onChunk: (full) => {
             const clean = liveClean(full);
-            const chars = clean.length;
+            const chars = countWords(clean);
             setGen((g) =>
               g
                 ? {
@@ -434,12 +438,14 @@ export default function App() {
                 : g
             );
           },
-          onUsage: (u) =>
+          onUsage: (u) => {
             setGen((g) =>
               g
                 ? { ...g, inputTokens: u.prompt_tokens, outputTokens: u.completion_tokens }
                 : g
-            ),
+            );
+            setLastUsage({ inputTokens: u.prompt_tokens, outputTokens: u.completion_tokens });
+          },
         }
       );
       console.log('[排版诊断] 客户端直连·流成功, 耗时', Date.now() - t0, 'ms, html长度:', res.html?.length || 0);
@@ -680,6 +686,7 @@ export default function App() {
         validation={result?.validation || null}
         onRegenerate={generate}
         stream={gen}
+        usage={lastUsage}
         readyForRegenerate={readyForRegen}
         scrollRef={previewScrollRef}
       />
