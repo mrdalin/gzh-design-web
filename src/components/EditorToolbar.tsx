@@ -25,7 +25,7 @@ interface Props {
   imgbbKey: string;
   imgbbExpiry?: number;
   disabled?: boolean;
-  onDocxFile?: (f: File | null) => void;
+  onDocxFile?: (f: File) => void;
   onNeedImgbbConfig?: () => void;
 }
 

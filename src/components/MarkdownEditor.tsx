@@ -13,9 +13,11 @@ interface Props {
   disabled?: boolean;
   textareaRef?: React.RefObject<HTMLTextAreaElement>;
   onNeedImgbbConfig?: () => void;
+  /** Word(.docx) 上传回调（由 App 用 mammoth 解析后写入 Markdown） */
+  onDocxFile?: (f: File) => void;
 }
 
-export default function MarkdownEditor({ value, onChange, imgbbKey, imgbbExpiry, disabled, textareaRef: externalRef, onNeedImgbbConfig }: Props) {
+export default function MarkdownEditor({ value, onChange, imgbbKey, imgbbExpiry, disabled, textareaRef: externalRef, onNeedImgbbConfig, onDocxFile }: Props) {
   const internalRef = useRef<HTMLTextAreaElement>(null);
   const textareaRef = externalRef ?? internalRef;
 
@@ -45,7 +47,7 @@ export default function MarkdownEditor({ value, onChange, imgbbKey, imgbbExpiry,
         imgbbKey={imgbbKey}
         imgbbExpiry={imgbbExpiry}
         disabled={disabled}
-        onDocxFile={() => {}}
+        onDocxFile={onDocxFile}
         onNeedImgbbConfig={onNeedImgbbConfig}
       />
 
