@@ -18,7 +18,7 @@ import {
   IconImage,
 } from '@douyinfe/semi-icons';
 import type { HistoryItem, LayoutResult, StoredModel, Theme } from './types';
-import { fetchThemes, layout, generateArticle } from './lib/api';
+import { fetchThemes, layout, layoutClientSide, generateArticle } from './lib/api';
 import { htmlToMarkdown } from './lib/htmlToMarkdown';
 import {
   loadModels,
@@ -52,6 +52,7 @@ const { Text } = Typography;
 
 export default function App() {
   const [themes, setThemes] = useState<Theme[]>([]);
+  const [commonComponents, setCommonComponents] = useState('');
   const [richHtml, setRichHtml] = useState('');
   const [article, setArticle] = useState('');
   const [prompt, setPrompt] = useState('');
@@ -83,11 +84,12 @@ export default function App() {
 
   useEffect(() => {
     fetchThemes()
-      .then((t) => {
-        setThemes(t);
+      .then((data) => {
+        setThemes(data.themes);
+        setCommonComponents(data.commonComponents);
         const last = loadLastThemeId();
-        if (last && t.some((x) => x.id === last)) setSelectedThemeId(last);
-        else if (t[0]) setSelectedThemeId(t[0].id);
+        if (last && data.themes.some((x) => x.id === last)) setSelectedThemeId(last);
+        else if (data.themes[0]) setSelectedThemeId(data.themes[0].id);
       })
       .catch(() => Toast.error('主题列表加载失败，请确认已部署（需要 functions）'));
 
@@ -194,19 +196,60 @@ export default function App() {
     }
 
     setLoading(true);
+    const genStartTime = Date.now();
+    console.log('[排版诊断] 开始生成', {
+      articleLen: liveArticle.length,
+      themeId: selectedThemeId,
+      model: m.model,
+      baseUrl: m.baseUrl,
+      version: APP_VERSION,
+    });
+
+    // 构建统一的模型参数（服务端/客户端共用）
+    const modelParams = {
+      id: m.id,
+      displayName: m.displayName,
+      baseUrl: m.baseUrl,
+      apiKey: m.apiKey,
+      model: m.model,
+    };
+
     try {
-      const res = await layout({
-        article: liveArticle,
-        themeId: selectedThemeId === 'custom' ? undefined : selectedThemeId,
-        customLib: selectedThemeId === 'custom' ? customLib : undefined,
-        model: {
-          id: m.id,
-          displayName: m.displayName,
-          baseUrl: m.baseUrl,
-          apiKey: m.apiKey,
-          model: m.model,
-        },
-      });
+      // ── 第一优先：尝试服务端模式（CF Functions）───────────────────
+      let res: LayoutResult;
+      try {
+        console.log('[排版诊断] 模式=服务端, 发送请求到 /api/layout ...');
+        const t0 = Date.now();
+        res = await layout({
+          article: liveArticle,
+          themeId: selectedThemeId === 'custom' ? undefined : selectedThemeId,
+          customLib: selectedThemeId === 'custom' ? customLib : undefined,
+          model: modelParams,
+        });
+        console.log('[排版诊断] 服务端成功, 耗时', Date.now() - t0, 'ms, html长度:', res.html?.length || 0);
+      } catch (serverErr: any) {
+        // 服务端失败（通常是 CF 超时 → Failed to fetch）→ 自动降级到客户端直连
+        if (serverErr.message?.includes('Failed to fetch') || serverErr.message?.includes('网络请求失败')) {
+          console.warn('[排版诊断] 服务端失败（可能 CF 超时），自动切换到客户端直连模式...', serverErr.message);
+          Toast.info('服务端超时，正在切换到浏览器直连模式…');
+          const t1 = Date.now();
+          // 把 commonComponents 附加到 themes 供客户端直连使用
+          const themesWithCommon = themes.map((t) => ({ ...t, commonComponents }));
+          res = await layoutClientSide({
+            article: liveArticle,
+            themeId: selectedThemeId === 'custom' ? undefined : selectedThemeId,
+            customLib: selectedThemeId === 'custom' ? customLib : undefined,
+            model: modelParams,
+            themes: themesWithCommon,
+          });
+          console.log('[排版诊断] 客户端直连成功, 耗时', Date.now() - t1, 'ms, html长度:', res.html?.length || 0);
+          Toast.success('浏览器直连模式排版完成');
+        } else {
+          // 其他错误（校验失败、参数错误等）不降级，直接抛出
+          throw serverErr;
+        }
+      }
+
       // 前端最终防线：防止空结果覆盖已有预览并写入空白历史
       if (!res.html || !res.html.trim()) {
         Toast.error('排版结果为空，请重试或更换模型');
@@ -230,7 +273,19 @@ export default function App() {
       setHistory(next);
       saveHistory(next);
     } catch (e: any) {
-      Toast.error(e?.message || '排版失败');
+      const elapsed = Date.now() - genStartTime;
+      console.error('[排版诊断] 失败, 耗时', elapsed, 'ms', {
+        name: e?.name,
+        message: e?.message,
+        stack: e?.stack?.slice(0, 500),
+      });
+      // 给用户一个可操作的诊断提示
+      const detail = e?.message || '未知错误';
+      let userMsg = detail;
+      if (detail.includes('Failed to fetch') || detail.includes('网络请求失败')) {
+        userMsg = `网络层失败（Failed to fetch）：请求发出后服务端未响应或连接被中断。可能原因：\n① Cloudflare 函数执行超时（免费版约 30s 限制）\n② 你的网络/代理/防火墙拦截了长连接\n③ 服务端未部署最新代码\n\n请按 F12 打开控制台查看「排版诊断」日志，并把红色信息截图发给我排查。\n总耗时：${Math.round(elapsed / 1000)}秒`;
+      }
+      Toast.error(userMsg);
     } finally {
       setLoading(false);
     }

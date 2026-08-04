@@ -76,6 +76,12 @@ export default function HistoryDrawer({
     setSelected([]);
   }
 
+  function clearAll() {
+    onChange([]);
+    setSelected([]);
+    Toast.success('已清空所有排版历史');
+  }
+
   return (
     <Modal
       visible={visible}
@@ -83,15 +89,24 @@ export default function HistoryDrawer({
       width={460}
       title={`排版历史（${items.length}）`}
       footer={
-        selected.length > 0 ? (
-          <Popconfirm title={`确认删除选中的 ${selected.length} 项？`} onConfirm={batchDelete}>
-            <Button type="danger" icon={<IconDelete />}>
-              批量删除（{selected.length}）
-            </Button>
-          </Popconfirm>
-        ) : (
-          <Text type="tertiary" size="small">勾选后可批量删除</Text>
-        )
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          {items.length > 0 ? (
+            <Popconfirm title="确认清空全部历史记录？" onConfirm={clearAll}>
+              <Button type="danger" size="small" icon={<IconDelete />}>
+                清空全部
+              </Button>
+            </Popconfirm>
+          ) : <span />}
+          {selected.length > 0 ? (
+            <Popconfirm title={`确认删除选中的 ${selected.length} 项？`} onConfirm={batchDelete}>
+              <Button type="danger" icon={<IconDelete />}>
+                批量删除（{selected.length}）
+              </Button>
+            </Popconfirm>
+          ) : (
+            <Text type="tertiary" size="small">勾选后可批量删除</Text>
+          )}
+        </div>
       }
     >
       {items.length === 0 ? (

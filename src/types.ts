@@ -6,6 +6,8 @@ export interface Theme {
   mainColor: string;
   scenario: string;
   underlineCss: string;
+  componentLib?: string; // 主题组件库 HTML（客户端直连模式需要）
+  commonComponents?: string; // 通用组件库（客户端直连模式需要，由前端从 /api/themes 获取后附加）
 }
 
 // 与 worker-lib/llm.ts 的 ModelConfig 对应
