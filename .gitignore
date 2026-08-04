@@ -9,3 +9,6 @@ dist
 
 # 主题预览图用外部 URL，不入库
 src/img/
+
+# 临时文件
+tmp/
