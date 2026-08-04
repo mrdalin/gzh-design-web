@@ -26,8 +26,10 @@ interface Props {
   imgbbExpiry?: number;
   disabled?: boolean;
   onNeedImgbbConfig?: () => void;
-  /** 粘贴内容后自动转 Markdown 回调（传入转换后的 md 文本） */
+  /** 内容变化后自动转 Markdown 回调（传入转换后的 md 文本），用于富文本 ↔ Markdown 双向同步 */
   onAutoConvert?: (markdown: string) => void;
+  /** 清除草稿按钮回调 */
+  onClear?: () => void;
 }
 
 const ALLOWED_TAGS = new Set([
@@ -91,21 +93,39 @@ function sanitizeWordHtml(raw: string): string {
   return tmp.innerHTML;
 }
 
-export default function RichEditor({ html, onChange, imgbbKey, imgbbExpiry, disabled, onNeedImgbbConfig, onAutoConvert }: Props) {
+export default function RichEditor({ html, onChange, imgbbKey, imgbbExpiry, disabled, onNeedImgbbConfig, onAutoConvert, onClear }: Props) {
   const editorRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLInputElement>(null);
+  const convertTimer = useRef<number | null>(null);
   const [uploading, setUploading] = useState(false);
 
-  // 同步外部 html 到编辑器（仅在首次或显式重置时）
+  // 同步外部 html 到编辑器：当 richHtml 被「Markdown → 富文本」方向更新时（用户正在
+  // Markdown 区编辑，编辑器未聚焦），将新 HTML 写回可见视图，实现双向实时同步。
+  // 用户正在富文本区打字时（聚焦）不打断，避免光标跳动；失焦后由 emit 兜底。
   useEffect(() => {
-    if (editorRef.current && editorRef.current.innerHTML !== html) {
-      editorRef.current.innerHTML = html;
+    const el = editorRef.current;
+    if (!el) return;
+    if (document.activeElement === el) return;
+    if (el.innerHTML !== html) {
+      el.innerHTML = html;
     }
-  }, []);
+  }, [html]);
 
   function emit() {
     if (!editorRef.current) return;
     onChange(editorRef.current.innerHTML);
+  }
+
+  // 富文本 → Markdown：输入防抖转换，避免逐字符触发整篇 htmlToMarkdown
+  function scheduleConvert() {
+    if (!onAutoConvert) return;
+    if (convertTimer.current) clearTimeout(convertTimer.current);
+    convertTimer.current = window.setTimeout(() => {
+      const cur = editorRef.current?.innerHTML || '';
+      if (cur.replace(/<[^>]+>/g, '').trim() || cur.includes('<img')) {
+        onAutoConvert(htmlToMarkdown(cur));
+      }
+    }, 400);
   }
 
   function exec(cmd: string, value: string | undefined = undefined) {
@@ -208,9 +228,22 @@ export default function RichEditor({ html, onChange, imgbbKey, imgbbExpiry, disa
         }}
       >
         <Text strong>文案内容</Text>
-        <Text type="tertiary" size="small">
-          支持从 Word 直接带格式粘贴 · 约 {countWords(html)} 字
-        </Text>
+        <Space spacing={8} style={{ alignItems: 'center' }}>
+          {onClear && (
+            <Button
+              size="small"
+              theme="borderless"
+              type="danger"
+              onClick={onClear}
+              disabled={disabled || (!html.replace(/<[^>]+>/g, '').trim() && !html.includes('<img'))}
+            >
+              清除草稿
+            </Button>
+          )}
+          <Text type="tertiary" size="small">
+            支持 Word 带格式粘贴 · 约 {countWords(html)} 字
+          </Text>
+        </Space>
       </div>
 
       <div
@@ -255,8 +288,20 @@ export default function RichEditor({ html, onChange, imgbbKey, imgbbExpiry, disa
       <div
         ref={editorRef}
         contentEditable={!disabled}
-        onInput={emit}
-        onBlur={emit}
+        onInput={() => {
+          emit();
+          scheduleConvert();
+        }}
+        onBlur={() => {
+          emit();
+          // 失焦立即同步一次，确保点击「生成排版」前 Markdown 区已是最终内容
+          if (onAutoConvert) {
+            const cur = editorRef.current?.innerHTML || '';
+            if (cur.replace(/<[^>]+>/g, '').trim() || cur.includes('<img')) {
+              onAutoConvert(htmlToMarkdown(cur));
+            }
+          }
+        }}
         onPaste={handlePaste}
         className="rich-editor"
         data-placeholder="从这里粘贴你的公众号文章内容，支持 Word 带格式粘贴…"

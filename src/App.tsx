@@ -18,6 +18,7 @@ import {
 import type { HistoryItem, LayoutResult, StoredModel, Theme } from './types';
 import { fetchThemes, layoutClientSideStream, liveClean, generateArticle } from './lib/api';
 import { htmlToMarkdown } from './lib/htmlToMarkdown';
+import { markdownToHtml } from './lib/markdownToHtml';
 import {
   loadModels,
   saveModels,
@@ -33,6 +34,9 @@ import {
   saveLastThemeId,
   loadCustomLib,
   saveCustomLib,
+  loadDraft,
+  saveDraft,
+  clearDraft,
 } from './lib/storage';
 import { copyRichText } from './lib/clipboard';
 import { REPO_URL, APP_VERSION } from './config';
@@ -49,10 +53,13 @@ import CustomThemeWizard from './components/CustomThemeWizard';
 const { Text } = Typography;
 
 export default function App() {
+  // 草稿：刷新页面后从本地缓存恢复，避免编辑内容丢失
+  const initialDraft = loadDraft();
+
   const [themes, setThemes] = useState<Theme[]>([]);
   const [commonComponents, setCommonComponents] = useState('');
-  const [richHtml, setRichHtml] = useState('');
-  const [article, setArticle] = useState('');
+  const [richHtml, setRichHtml] = useState(initialDraft?.richHtml || '');
+  const [article, setArticle] = useState(initialDraft?.article || '');
   const [prompt, setPrompt] = useState('');
 
   const [selectedThemeId, setSelectedThemeId] = useState('');
@@ -75,6 +82,10 @@ export default function App() {
   const mdTextareaRef = useRef<HTMLTextAreaElement>(null);
   const [gen, setGen] = useState<{ phase: string; partial: string; chars: number; inputTokens?: number; outputTokens?: number } | null>(null);
   const playRef = useRef<number | null>(null);
+
+  // 防止「富文本 → Markdown → 富文本」回环：当变更源自富文本编辑器时，临时屏蔽
+  // Markdown 反向同步，避免来回改写导致光标跳动或内容被重写。
+  const syncingFromRich = useRef(false);
 
   const [historyVisible, setHistoryVisible] = useState(false);
   const [imgbbVisible, setImgbbVisible] = useState(false);
@@ -110,6 +121,15 @@ export default function App() {
     }
   }, []);
 
+  // 草稿自动保存：富文本 / Markdown 任意一方变更后 600ms 防抖写入本地缓存。
+  // 仅首次加载与生成结果展示不触发（生成结果走 history，不进草稿）。
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      saveDraft({ richHtml, article });
+    }, 600);
+    return () => clearTimeout(t);
+  }, [richHtml, article]);
+
   const customActive = selectedThemeId === 'custom';
   const currentModel = models.find((x) => x.id === selectedModelId);
 
@@ -140,6 +160,47 @@ export default function App() {
     const md = htmlToMarkdown(richHtml);
     setArticle(md);
     Toast.success('已转换为 Markdown，可在中间编辑器二次编辑');
+  }
+
+  // Markdown 区编辑 → 反向同步到富文本区（仅当变更非源自富文本编辑器时）
+  function handleArticleChange(md: string) {
+    setArticle(md);
+    if (!syncingFromRich.current) {
+      setRichHtml(markdownToHtml(md));
+    }
+  }
+
+  // 富文本区 → 同步到 Markdown 区（粘贴/输入/失焦时触发）
+  function handleRichAutoConvert(md: string) {
+    syncingFromRich.current = true;
+    setArticle(md);
+    // 下一个渲染周期后解除屏蔽，避免误伤后续正常的 Markdown 编辑
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        syncingFromRich.current = false;
+      });
+    });
+  }
+
+  // 一键清除草稿：清空两端内容并删除本地缓存
+  function clearDraftAll() {
+    Modal.confirm({
+      title: '清除草稿？',
+      content:
+        '将清空左侧文案与中间 Markdown 内容，并删除本地缓存的草稿。此操作不可撤销，但不会影响已生成的排版历史。',
+      onOk: () => {
+        syncingFromRich.current = true;
+        setRichHtml('');
+        setArticle('');
+        clearDraft();
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            syncingFromRich.current = false;
+          });
+        });
+        Toast.success('草稿已清除');
+      },
+    });
   }
 
   async function generateFromPrompt() {
@@ -425,7 +486,8 @@ export default function App() {
               imgbbExpiry={imgbbExpiry}
               disabled={generating}
               onNeedImgbbConfig={() => setImgbbVisible(true)}
-              onAutoConvert={(md) => { setArticle(md); }}
+              onAutoConvert={handleRichAutoConvert}
+              onClear={clearDraftAll}
             />
 
             <Button
@@ -465,7 +527,7 @@ export default function App() {
           <div className="app-md-inner">
             <MarkdownEditor
               value={article}
-              onChange={setArticle}
+              onChange={handleArticleChange}
               imgbbKey={imgbbKey}
               imgbbExpiry={imgbbExpiry}
               disabled={loading}

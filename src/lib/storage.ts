@@ -10,6 +10,7 @@ const KEYS = {
   lastThemeId: 'gzh_last_theme_v1',
   customLib: 'gzh_custom_lib_v1',
   customThemeName: 'gzh_custom_theme_name_v1',
+  draft: 'gzh_draft_v1',
 };
 
 // imgbb 图片有效期，单位秒；0 表示长期（永久，不传 expiration），-1 表示自定义。
@@ -134,6 +135,24 @@ export function saveCustomLib(html: string, name: string): void {
 export function clearCustomLib(): void {
   write(KEYS.customLib, '');
   write(KEYS.customThemeName, '');
+}
+
+// 草稿：缓存文案内容区（富文本 HTML）与中间 Markdown 区，刷新不丢失。
+export interface DraftData {
+  richHtml: string;
+  article: string;
+}
+
+export function loadDraft(): DraftData | null {
+  return read<DraftData | null>(KEYS.draft, null);
+}
+
+export function saveDraft(d: DraftData): void {
+  write(KEYS.draft, d);
+}
+
+export function clearDraft(): void {
+  write(KEYS.draft, null);
 }
 
 export { DEFAULT_MODELS };
