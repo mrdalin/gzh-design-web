@@ -12,7 +12,6 @@ import {
   IconCode,
   IconSend,
   IconArrowRight,
-  IconHistory,
   IconSetting,
   IconImage,
 } from '@douyinfe/semi-icons';
@@ -385,9 +384,6 @@ export default function App() {
           </Text>
         </div>
         <Space>
-          <Button theme="borderless" icon={<IconHistory />} onClick={() => setHistoryVisible(true)}>
-            历史
-          </Button>
           {REPO_URL && (
             <Button theme="borderless" icon={<IconCode />} onClick={() => window.open(REPO_URL, '_blank')}>
               源码
@@ -395,7 +391,7 @@ export default function App() {
           )}
           <Dropdown trigger="click" position="bottomRight">
             <Button theme="borderless" icon={<IconSetting />}>
-              配置 API
+              配置
             </Button>
             <Dropdown.Menu>
               <Dropdown.Item icon={<IconImage />} onClick={() => setImgbbVisible(true)}>
@@ -417,7 +413,6 @@ export default function App() {
         onSelect={handleThemeSelect}
         onOpenWizard={() => setWizardVisible(true)}
         onOpenHistory={() => setHistoryVisible(true)}
-        onOpenSettings={() => setModelVisible(true)}
       />
 
       <div className="app-shell app-shell-proto">

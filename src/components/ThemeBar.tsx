@@ -13,7 +13,6 @@ interface Props {
   onSelect: (id: string) => void;
   onOpenWizard: () => void;
   onOpenHistory: () => void;
-  onOpenSettings: () => void;
 }
 
 export default function ThemeBar({
@@ -24,7 +23,6 @@ export default function ThemeBar({
   onSelect,
   onOpenWizard,
   onOpenHistory,
-  onOpenSettings,
 }: Props) {
   return (
     <div className="theme-bar">
@@ -71,12 +69,6 @@ export default function ThemeBar({
             排版历史
           </Button>
         </Space>
-      </div>
-
-      <div className="theme-bar-actions">
-        <Button theme="borderless" onClick={onOpenSettings}>
-          配置 API
-        </Button>
       </div>
     </div>
   );
