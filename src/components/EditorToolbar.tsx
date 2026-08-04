@@ -12,7 +12,6 @@ import {
   IconCode,
   IconLink,
   IconImage,
-  IconFile,
   IconUndo,
   IconRedo,
 } from '@douyinfe/semi-icons';
@@ -25,7 +24,6 @@ interface Props {
   imgbbKey: string;
   imgbbExpiry?: number;
   disabled?: boolean;
-  onDocxFile?: (f: File) => void;
   onNeedImgbbConfig?: () => void;
 }
 
@@ -55,10 +53,8 @@ export default function EditorToolbar({
   imgbbKey,
   imgbbExpiry,
   disabled,
-  onDocxFile,
   onNeedImgbbConfig,
 }: Props) {
-  const docxRef = useRef<HTMLInputElement>(null);
   const imgRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
 
@@ -132,16 +128,6 @@ export default function EditorToolbar({
     }
   }
 
-  function pickDocx() {
-    if (!onDocxFile) return;
-    docxRef.current?.click();
-  }
-  function onDocxSelected(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0];
-    if (f) onDocxFile?.(f);
-    e.target.value = '';
-  }
-
   function addLink() {
     const url = window.prompt('请输入链接地址', 'https://');
     if (!url) return;
@@ -164,7 +150,6 @@ export default function EditorToolbar({
         flexWrap: 'wrap',
       }}
     >
-        {onDocxFile && <input ref={docxRef} type="file" accept=".docx" style={{ display: 'none' }} onChange={onDocxSelected} />}
         <input ref={imgRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={onImageSelected} />
 
       <Tooltip content="加粗"><Button size="small" theme="borderless" style={btnStyle} icon={<IconBold />} onClick={() => insertAround('**', '**')} disabled={disabled} /></Tooltip>
@@ -189,9 +174,6 @@ export default function EditorToolbar({
       <div style={{ width: 1, height: 18, background: 'var(--semi-color-border)', margin: '0 4px' }} />
 
       <Tooltip content="上传图片"><Button size="small" theme="borderless" style={btnStyle} icon={<IconImage />} onClick={pickImage} loading={uploading} disabled={disabled} /></Tooltip>
-      {onDocxFile && (
-        <Tooltip content="上传 Word"><Button size="small" theme="borderless" style={btnStyle} icon={<IconFile />} onClick={pickDocx} disabled={disabled} /></Tooltip>
-      )}
 
       <div style={{ width: 1, height: 18, background: 'var(--semi-color-border)', margin: '0 4px' }} />
 

@@ -12,6 +12,7 @@ import {
   IconLink,
   IconImage,
   IconDelete,
+  IconFile,
 } from '@douyinfe/semi-icons';
 import { uploadImage } from '../lib/api';
 import { countWords } from '../lib/wordCount';
@@ -30,6 +31,8 @@ interface Props {
   onAutoConvert?: (markdown: string) => void;
   /** 清除草稿按钮回调 */
   onClear?: () => void;
+  /** Word(.docx) 上传回调（由 App 用 mammoth 解析后写入 Markdown） */
+  onDocxFile?: (f: File) => void;
   /** 联动滚动：接收本编辑器滚动容器（.rich-editor）的 ref */
   scrollRef?: React.Ref<HTMLDivElement>;
 }
@@ -95,11 +98,18 @@ function sanitizeWordHtml(raw: string): string {
   return tmp.innerHTML;
 }
 
-export default function RichEditor({ html, onChange, imgbbKey, imgbbExpiry, disabled, onNeedImgbbConfig, onAutoConvert, onClear, scrollRef }: Props) {
+export default function RichEditor({ html, onChange, imgbbKey, imgbbExpiry, disabled, onNeedImgbbConfig, onAutoConvert, onClear, onDocxFile, scrollRef }: Props) {
   const editorRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLInputElement>(null);
+  const docxRef = useRef<HTMLInputElement>(null);
   const convertTimer = useRef<number | null>(null);
   const [uploading, setUploading] = useState(false);
+
+  function onDocxSelected(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    if (f) onDocxFile?.(f);
+    e.target.value = '';
+  }
 
   // 同步外部 html 到编辑器：当 richHtml 被「Markdown → 富文本」方向更新时（用户正在
   // Markdown 区编辑，编辑器未聚焦），将新 HTML 写回可见视图，实现双向实时同步。
@@ -231,6 +241,17 @@ export default function RichEditor({ html, onChange, imgbbKey, imgbbExpiry, disa
       >
         <Text strong>富文本文案内容书写编辑区</Text>
         <Space spacing={8} style={{ alignItems: 'center' }}>
+          {onDocxFile && (
+            <Button
+              size="small"
+              theme="light"
+              icon={<IconFile />}
+              onClick={() => docxRef.current?.click()}
+              disabled={disabled}
+            >
+              上传 Word
+            </Button>
+          )}
           {onClear && (
             <Button
               size="small"
@@ -262,6 +283,7 @@ export default function RichEditor({ html, onChange, imgbbKey, imgbbExpiry, disa
         }}
       >
         <input ref={imgRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={onImageSelected} />
+        {onDocxFile && <input ref={docxRef} type="file" accept=".docx,.doc" style={{ display: 'none' }} onChange={onDocxSelected} />}
 
         <Tooltip content="加粗"><Button size="small" theme="borderless" style={btnStyle} icon={<IconBold />} onClick={() => exec('bold')} disabled={disabled} /></Tooltip>
         <Tooltip content="斜体"><Button size="small" theme="borderless" style={btnStyle} icon={<IconItalic />} onClick={() => exec('italic')} disabled={disabled} /></Tooltip>

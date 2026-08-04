@@ -17,7 +17,7 @@ import {
   IconHistory,
 } from '@douyinfe/semi-icons';
 import type { HistoryItem, LayoutResult, StoredModel, Theme } from './types';
-import { fetchThemes, layoutClientSideStream, liveClean, generateArticle } from './lib/api';
+import { fetchThemes, layoutClientSideStream, liveClean, generateArticle, uploadImageB64 } from './lib/api';
 import { htmlToMarkdown } from './lib/htmlToMarkdown';
 import { markdownToHtml } from './lib/markdownToHtml';
 import { useScrollSync } from './lib/useScrollSync';
@@ -54,6 +54,18 @@ import ModelManager from './components/ModelManager';
 import CustomThemeWizard from './components/CustomThemeWizard';
 
 const { Text } = Typography;
+
+// 无 imgbb Key 时 Word 图片占位（可见灰块，提示用户配置图床后重传 Word）。
+const PLACEHOLDER_IMG =
+  'data:image/svg+xml,' +
+  encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" width="320" height="160"><rect width="100%" height="100%" fill="#f0f0f0"/><text x="50%" y="50%" font-family="-apple-system,Segoe UI,sans-serif" font-size="14" fill="#999" text-anchor="middle" dominant-baseline="middle">图片占位（配置「图片 API」后重传 Word 可自动上传）</text></svg>'
+  );
+
+// 模型是否「配置良好」：需 baseUrl + apiKey + model 三者齐全（预设模型的 Key 默认为空）。
+function isModelConfigured(m?: StoredModel): boolean {
+  return !!(m && m.baseUrl && m.apiKey && m.model);
+}
 
 export default function App() {
   // 草稿：刷新页面后从本地缓存恢复，避免编辑内容丢失
@@ -220,11 +232,36 @@ export default function App() {
     });
   }
 
-  // Word(.docx) 上传解析：用 mammoth 客户端提取文本→设为 Markdown
+  // Word(.docx) 上传解析：用 mammoth 客户端提取文本与图片。
+  // 图片：若已配置 imgbb Key 则自动上传并返回真实 URL；否则留占位图并提示用户先配置。
   async function handleDocxUpload(file: File) {
+    const lower = file.name.toLowerCase();
+    if (!lower.endsWith('.docx') && !lower.endsWith('.doc')) {
+      Toast.warning('仅支持 Word 文件（.docx / .doc）');
+      return;
+    }
+    if (lower.endsWith('.doc') && !lower.endsWith('.docx')) {
+      Toast.error('旧版 .doc 格式无法解析，请先将文件「另存为」.docx 后再上传');
+      return;
+    }
     try {
       const arrayBuffer = await file.arrayBuffer();
+      const hasKey = !!imgbbKey?.trim();
+      let imageFail = 0;
+      const convertImage = mammoth.images.imgElement(async (image: any) => {
+        const b64 = await image.read('base64');
+        if (!hasKey) return { src: PLACEHOLDER_IMG };
+        try {
+          const res = await uploadImageB64(b64, imgbbKey, imgbbExpiry);
+          return { src: res.url };
+        } catch (e) {
+          imageFail++;
+          console.warn('[Word 图片上传失败]', e);
+          return { src: PLACEHOLDER_IMG };
+        }
+      });
       const result = await mammoth.convertToMarkdown({ arrayBuffer }, {
+        convertImage,
         styleMap: [
           "b[style-name='Heading 1'] => h1:fresh",
           "b[style-name='Heading 2'] => h2:fresh",
@@ -246,9 +283,13 @@ export default function App() {
         });
       });
       Toast.success(`Word 已解析为 Markdown（约 ${md.length} 字）`);
-      // 如果有转换警告（如图表/复杂格式），提示用户
       if (result.messages.length > 0) {
         console.log('[Word 解析警告]', result.messages);
+      }
+      if (hasKey && imageFail > 0) {
+        Toast.warning(`有 ${imageFail} 张图片上传失败（已留占位），请检查 imgbb Key 或网络`);
+      } else if (!hasKey) {
+        Toast.info('本文含图片：因未配置 imgbb 图床，图片已留占位；到右上角「图片 API」填写 Key 后重新上传 Word 即可自动上传图片');
       }
     } catch (e: any) {
       console.error('[Word 解析失败]', e);
@@ -487,8 +528,19 @@ export default function App() {
   }
 
   function handleModelSelect(id: string) {
+    // 下拉末尾「添加自定义模型」→ 打开模型管理窗口
+    if (id === '__add_custom__') {
+      setModelVisible(true);
+      return;
+    }
+    const m = models.find((x) => x.id === id);
     setSelectedModelId(id);
     saveLastModelId(id);
+    // 选中了未配置（缺 API Key）的模型：提示并打开模型管理，引导填写
+    if (m && !isModelConfigured(m)) {
+      Toast.info('该模型尚未配置 API Key，请先在「模型 API」中填写');
+      setModelVisible(true);
+    }
   }
 
   return (
@@ -504,13 +556,18 @@ export default function App() {
         <Space>
           <Select
             size="small"
-            style={{ width: 170 }}
+            style={{ width: 190 }}
             value={selectedModelId}
             onChange={(v) => handleModelSelect(v as string)}
-            optionList={models.map((m) => ({
-              label: m.apiKey ? m.model : (m.displayName || m.model),
-              value: m.id,
-            }))}
+            optionList={[
+              ...models.map((m) => ({
+                label: isModelConfigured(m)
+                  ? (m.displayName || m.model)
+                  : `${m.displayName || m.model}（未配置）`,
+                value: m.id,
+              })),
+              { label: '➕ 添加自定义模型…', value: '__add_custom__' },
+            ]}
             placeholder="选择模型"
           />
           <Button theme="borderless" icon={<IconHistory />} onClick={() => setHistoryVisible(true)}>
@@ -552,6 +609,7 @@ export default function App() {
               onNeedImgbbConfig={() => setImgbbVisible(true)}
               onAutoConvert={handleRichAutoConvert}
               onClear={clearDraftAll}
+              onDocxFile={handleDocxUpload}
               scrollRef={richScrollRef}
             />
 
@@ -598,7 +656,6 @@ export default function App() {
               disabled={loading}
               textareaRef={mdTextareaRef}
               onNeedImgbbConfig={() => setImgbbVisible(true)}
-              onDocxFile={handleDocxUpload}
             />
             <Button
               theme="solid"
