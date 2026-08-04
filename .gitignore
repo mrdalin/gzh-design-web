@@ -6,3 +6,6 @@ dist
 *.log
 .DS_Store
 .workbuddy/
+
+# 主题预览图用外部 URL，不入库
+src/img/
