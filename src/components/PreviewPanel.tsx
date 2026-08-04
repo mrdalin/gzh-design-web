@@ -38,6 +38,8 @@ interface Props {
   onModelSelect?: (id: string) => void;
   // 重新生成按钮：排版完成后 1s 才可点击
   readyForRegenerate?: boolean;
+  // 联动滚动：接收预览区滚动容器的 ref
+  scrollRef?: React.Ref<HTMLDivElement>;
 }
 
 function sanitizeFileName(s: string): string {
@@ -99,12 +101,22 @@ export default function PreviewPanel({
   selectedModelId,
   onModelSelect,
   readyForRegenerate = false,
+  scrollRef,
 }: Props) {
   const frameRef = useRef<HTMLDivElement>(null);
+  const internalScrollRef = useRef<HTMLDivElement>(null);
   const [shotVisible, setShotVisible] = useState(false);
   const [capturing, setCapturing] = useState(false);
 
   const shownHtml = loading && stream ? stream.partial : html;
+
+  // 流式生成时自动滚到底部，营造「最新内容在下方不停输出」的对话式效果。
+  useEffect(() => {
+    if (loading && stream && internalScrollRef.current) {
+      const el = internalScrollRef.current;
+      el.scrollTop = el.scrollHeight;
+    }
+  }, [loading, stream, stream?.partial]);
 
   async function handleCopy() {
     if (!html) {
@@ -221,7 +233,16 @@ export default function PreviewPanel({
         </Space>
       </div>
 
-      <div style={{ flex: 1, overflow: 'auto', background: 'var(--semi-color-fill-0)' }}>
+      <div
+        ref={(el) => {
+          internalScrollRef.current = el;
+          if (scrollRef) {
+            if (typeof scrollRef === 'function') scrollRef(el);
+            else (scrollRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+          }
+        }}
+        style={{ flex: 1, overflow: 'auto', background: 'var(--semi-color-fill-0)' }}
+      >
         {loading && stream ? (
           <StreamView stream={stream} />
         ) : !html ? (

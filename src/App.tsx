@@ -19,6 +19,7 @@ import type { HistoryItem, LayoutResult, StoredModel, Theme } from './types';
 import { fetchThemes, layoutClientSideStream, liveClean, generateArticle } from './lib/api';
 import { htmlToMarkdown } from './lib/htmlToMarkdown';
 import { markdownToHtml } from './lib/markdownToHtml';
+import { useScrollSync } from './lib/useScrollSync';
 import {
   loadModels,
   saveModels,
@@ -87,6 +88,12 @@ export default function App() {
   // Markdown 反向同步，避免来回改写导致光标跳动或内容被重写。
   const syncingFromRich = useRef(false);
 
+  // 三栏联动滚动的容器 ref（富文本区 / Markdown 区 / 预览区）
+  const richScrollRef = useRef<HTMLDivElement | null>(null);
+  const previewScrollRef = useRef<HTMLDivElement | null>(null);
+  // 生成过程中暂停联动，避免预览自动滚底带动其它区
+  const syncEnabledRef = useRef(true);
+
   const [historyVisible, setHistoryVisible] = useState(false);
   const [imgbbVisible, setImgbbVisible] = useState(false);
   const [modelVisible, setModelVisible] = useState(false);
@@ -129,6 +136,14 @@ export default function App() {
     }, 600);
     return () => clearTimeout(t);
   }, [richHtml, article]);
+
+  // 生成进行时暂停三栏联动滚动，避免预览区自动滚底时把其它区也带到底部。
+  useEffect(() => {
+    syncEnabledRef.current = !(loading && gen);
+  }, [loading, gen]);
+
+  // 三栏按比例联动滚动：任一区域滚动，其余区域按相同比例跟随。
+  useScrollSync([richScrollRef, mdTextareaRef, previewScrollRef], syncEnabledRef);
 
   const customActive = selectedThemeId === 'custom';
   const currentModel = models.find((x) => x.id === selectedModelId);
@@ -488,6 +503,7 @@ export default function App() {
               onNeedImgbbConfig={() => setImgbbVisible(true)}
               onAutoConvert={handleRichAutoConvert}
               onClear={clearDraftAll}
+              scrollRef={richScrollRef}
             />
 
             <Button
@@ -561,6 +577,7 @@ export default function App() {
         selectedModelId={selectedModelId}
         onModelSelect={handleModelSelect}
         readyForRegenerate={readyForRegen}
+        scrollRef={previewScrollRef}
       />
         </aside>
       </div>

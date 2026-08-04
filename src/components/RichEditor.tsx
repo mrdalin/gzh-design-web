@@ -30,6 +30,8 @@ interface Props {
   onAutoConvert?: (markdown: string) => void;
   /** 清除草稿按钮回调 */
   onClear?: () => void;
+  /** 联动滚动：接收本编辑器滚动容器（.rich-editor）的 ref */
+  scrollRef?: React.Ref<HTMLDivElement>;
 }
 
 const ALLOWED_TAGS = new Set([
@@ -93,7 +95,7 @@ function sanitizeWordHtml(raw: string): string {
   return tmp.innerHTML;
 }
 
-export default function RichEditor({ html, onChange, imgbbKey, imgbbExpiry, disabled, onNeedImgbbConfig, onAutoConvert, onClear }: Props) {
+export default function RichEditor({ html, onChange, imgbbKey, imgbbExpiry, disabled, onNeedImgbbConfig, onAutoConvert, onClear, scrollRef }: Props) {
   const editorRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLInputElement>(null);
   const convertTimer = useRef<number | null>(null);
@@ -227,7 +229,7 @@ export default function RichEditor({ html, onChange, imgbbKey, imgbbExpiry, disa
           padding: '0 4px',
         }}
       >
-        <Text strong>文案内容</Text>
+        <Text strong>富文本文案内容书写编辑区</Text>
         <Space spacing={8} style={{ alignItems: 'center' }}>
           {onClear && (
             <Button
@@ -286,7 +288,13 @@ export default function RichEditor({ html, onChange, imgbbKey, imgbbExpiry, disa
       </div>
 
       <div
-        ref={editorRef}
+        ref={(el) => {
+          editorRef.current = el;
+          if (scrollRef) {
+            if (typeof scrollRef === 'function') scrollRef(el);
+            else (scrollRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+          }
+        }}
         contentEditable={!disabled}
         onInput={() => {
           emit();
