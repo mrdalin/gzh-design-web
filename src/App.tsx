@@ -403,10 +403,10 @@ export default function App() {
             </Button>
             <Dropdown.Menu>
               <Dropdown.Item icon={<IconImage />} onClick={() => setImgbbVisible(true)}>
-                图片 API（imgbb 图床）
+                📷 图片 API
               </Dropdown.Item>
               <Dropdown.Item icon={<IconSetting />} onClick={() => setModelVisible(true)}>
-                模型 API（AI 模型）
+                🤖 模型 API
               </Dropdown.Item>
             </Dropdown.Menu>
           </Dropdown>
