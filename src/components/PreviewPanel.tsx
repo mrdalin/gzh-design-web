@@ -266,16 +266,16 @@ export default function PreviewPanel({
       </div>
 
       {validation && !loading && (validation.errors.length > 0 || validation.warnings.length > 0) && (
-        <div style={{ borderTop: '1px solid var(--semi-color-border)', padding: 8 }}>
+        <div style={{ borderTop: '1px solid var(--semi-color-border)', padding: 8, maxHeight: 220, overflowY: 'auto' }}>
           {validation.errors.length > 0 ? (
             <Banner
               type="danger"
               closeIcon={null}
               description={
                 <div>
-                  <Text strong>仍有 {validation.errors.length} 处可能不兼容：</Text>
+                  <Text strong>检测到 {validation.errors.length} 处可能不兼容，建议重新生成或手动调整后使用：</Text>
                   <ul style={{ margin: '4px 0 0', paddingLeft: 18 }}>
-                    {validation.errors.slice(0, 5).map((e, i) => (
+                    {validation.errors.map((e, i) => (
                       <li key={i} style={{ fontSize: 12 }}>{e}</li>
                     ))}
                   </ul>
@@ -292,9 +292,26 @@ export default function PreviewPanel({
             />
           )}
           {validation.warnings.length > 0 && (
-            <Paragraph type="warning" size="small" style={{ marginTop: 4 }}>
-              提示：{validation.warnings.slice(0, 3).join('；')}
-            </Paragraph>
+            <div
+              style={{
+                marginTop: 6,
+                padding: '8px 10px',
+                borderRadius: 6,
+                background: 'var(--semi-color-warning-light-default)',
+                border: '1px solid var(--semi-color-warning-light-active)',
+              }}
+            >
+              <Text type="warning" size="small" style={{ fontWeight: 600 }}>
+                {validation.errors.length === 0
+                  ? '✅ 仅有以下提示（橙色 warning，无红色 error），通常可直接使用，无需担心：'
+                  : '同时还有以下提示（不影响使用）：'}
+              </Text>
+              <ul style={{ margin: '4px 0 0', paddingLeft: 18 }}>
+                {validation.warnings.map((w, i) => (
+                  <li key={i} style={{ fontSize: 12, color: 'var(--semi-color-warning)' }}>{w}</li>
+                ))}
+              </ul>
+            </div>
           )}
         </div>
       )}
