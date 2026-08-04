@@ -19,16 +19,30 @@ export async function layout(params: {
 }): Promise<LayoutResult> {
   // 注意：Cloudflare Pages Functions 的 request.formData() 在此环境无法正确解析
   // 浏览器提交的 multipart/form-data（article 字段会丢失），因此统一改用 JSON。
-  const res = await fetch('/api/layout', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      article: params.article || '',
-      themeId: params.themeId,
-      customLib: params.customLib,
-      model: params.model,
-    }),
-  });
+  // 前端超时保护：Cloudflare Pages Functions 有执行时间限制，长文排版可能耗时较长。
+  // 设 180s 超时，超时后给出明确提示而非无限等待或 "Failed to fetch"。
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 180_000);
+
+  let res: Response;
+  try {
+    res = await fetch('/api/layout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        article: params.article || '',
+        themeId: params.themeId,
+        customLib: params.customLib,
+        model: params.model,
+      }),
+      signal: controller.signal,
+    });
+  } catch (err: any) {
+    clearTimeout(timeout);
+    if (err.name === 'AbortError') throw new Error('排版请求超时（3分钟无响应），请重试或缩短文章后重试');
+    throw new Error(`网络请求失败（${err.message}），请检查网络连接`);
+  }
+  clearTimeout(timeout);
   const data: any = await res.json();
   if (!res.ok) throw new Error(data.error || '排版失败');
   if (!data?.html?.trim()) throw new Error('服务端返回空排版结果，请重试或更换模型');

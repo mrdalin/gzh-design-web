@@ -24,7 +24,7 @@ export const IMGBB_EXPIRY_OPTIONS: { label: string; value: number }[] = [
 const DEFAULT_MODELS: StoredModel[] = [
   {
     id: 'agnes-25-flash',
-    displayName: 'Agnes（中国站）',
+    displayName: 'Agnes-CN',
     // Agnes 分国内(agnes-ai.cn)与国外站点，这里用国内站 api.agnes-ai.cn
     baseUrl: 'https://api.agnes-ai.cn/v1',
     apiKey: '',

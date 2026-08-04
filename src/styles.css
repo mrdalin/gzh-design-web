@@ -230,8 +230,8 @@ body {
   min-height: 0;
   resize: none;
   padding: 12px;
-  font-size: 15px;
-  line-height: 1.7;
+  font-size: 14px;
+  line-height: 1.5;
   color: var(--semi-color-text-0);
   background: var(--semi-color-bg-0);
   border: 1px solid var(--semi-color-border);

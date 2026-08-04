@@ -277,6 +277,9 @@ export default function App() {
         <div className="app-logo">
           <span style={{ color: 'var(--semi-color-primary)' }}>✍️</span>
           微信公众号 AI 排版
+          <Text type="tertiary" size="small" style={{ opacity: 0.4, userSelect: 'none', fontWeight: 400, fontSize: 11 }}>
+            v{APP_VERSION}
+          </Text>
         </div>
         <Space>
           <Select
@@ -285,7 +288,7 @@ export default function App() {
             value={selectedModelId}
             onChange={(v) => handleModelSelect(v as string)}
             optionList={models.map((m) => ({
-              label: m.displayName || m.model,
+              label: m.apiKey ? m.model : (m.displayName || m.model),
               value: m.id,
             }))}
             placeholder="选择模型"
@@ -298,9 +301,6 @@ export default function App() {
               源码
             </Button>
           )}
-          <Text type="tertiary" size="small" style={{ opacity: 0.45, userSelect: 'none' }}>
-            v{APP_VERSION}
-          </Text>
           <Dropdown trigger="click" position="bottomRight">
             <Button theme="borderless" icon={<IconSetting />}>
               配置 API
