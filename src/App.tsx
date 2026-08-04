@@ -425,7 +425,7 @@ export default function App() {
               imgbbExpiry={imgbbExpiry}
               disabled={generating}
               onNeedImgbbConfig={() => setImgbbVisible(true)}
-              onAutoConvert={(md) => { setArticle(md); Toast.success('已自动转换为 Markdown'); }}
+              onAutoConvert={(md) => { setArticle(md); }}
             />
 
             <Button

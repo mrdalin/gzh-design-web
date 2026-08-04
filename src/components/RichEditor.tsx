@@ -166,6 +166,16 @@ export default function RichEditor({ html, onChange, imgbbKey, imgbbExpiry, disa
       document.execCommand('insertImage', false, res.url);
       emit();
       Toast.success('图片已插入');
+      // 同步到中间 Markdown 编辑器（与粘贴逻辑一致）
+      if (onAutoConvert) {
+        requestAnimationFrame(() => {
+          const currentHtml = editorRef.current?.innerHTML || '';
+          if (currentHtml.replace(/<[^>]+>/g, '').trim() || currentHtml.includes('<img')) {
+            const md = htmlToMarkdown(currentHtml);
+            onAutoConvert(md);
+          }
+        });
+      }
     } catch (err: any) {
       Toast.error(err?.message || '图片上传失败');
     } finally {
