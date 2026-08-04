@@ -41,5 +41,10 @@ export async function chatCompletion(
     throw new Error(`LLM 请求失败 (${resp.status}): ${errText.slice(0, 400)}`);
   }
   const data: any = await resp.json();
-  return data?.choices?.[0]?.message?.content ?? '';
+  const content = data?.choices?.[0]?.message?.content ?? '';
+  // 某些模型（尤其是推理模型）可能把正文放 reasoning_content 或直接返回空
+  if (!content || !content.trim()) {
+    throw new Error('模型返回空内容（可能 max_tokens 超出模型上限，或模型不支持该请求格式），请尝试降低 max_tokens 或更换模型');
+  }
+  return content;
 }

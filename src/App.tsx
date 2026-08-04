@@ -207,6 +207,11 @@ export default function App() {
           model: m.model,
         },
       });
+      // 前端最终防线：防止空结果覆盖已有预览并写入空白历史
+      if (!res.html || !res.html.trim()) {
+        Toast.error('排版结果为空，请重试或更换模型');
+        return;
+      }
       setResult(res);
 
       const themeName =

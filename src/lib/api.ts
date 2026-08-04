@@ -31,6 +31,7 @@ export async function layout(params: {
   });
   const data: any = await res.json();
   if (!res.ok) throw new Error(data.error || '排版失败');
+  if (!data?.html?.trim()) throw new Error('服务端返回空排版结果，请重试或更换模型');
   return data as LayoutResult;
 }
 

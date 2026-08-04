@@ -118,7 +118,9 @@ ${MOYU_GREEN_SAMPLE}
       let fixed = stripFences(fix);
       fixed = fixLeafSpans(fixed);
       const r2 = validate(fixed);
-      if (r2.errors.length <= result.errors.length) {
+      // 拒绝空结果：空串通过 validate 会得 0 错误（无 CJK 内容不触发 leaf 检查），
+      // 若不排除，空串会"赢"过首轮正常 HTML 并导致预览清空。
+      if (fixed.trim() && r2.errors.length <= result.errors.length) {
         html = fixed;
         result = r2;
       }
@@ -127,6 +129,12 @@ ${MOYU_GREEN_SAMPLE}
     // 最终兜底：清理残留的 Markdown 语法（目录/扩写是允许的，不在此移除）
     html = fixMarkdownResiduals(html);
     result = validate(html);
+
+    // 最终兜底：若 html 为空（模型返回空 / stripFences 抹空 / 全被重试拒绝），
+    // 返回错误而非静默传回空字符串（前端会清空预览且无任何提示）。
+    if (!html || !html.trim()) {
+      return json({ error: '模型返回空内容，请重试或更换模型' }, 502);
+    }
 
     return json({
       html,
