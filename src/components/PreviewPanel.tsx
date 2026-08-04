@@ -57,19 +57,27 @@ function downloadDataUrl(dataUrl: string, fileName: string) {
   a.click();
 }
 
-function StreamView({ stream }: { stream: StreamState }) {
+function StreamStatusBar({ stream }: { stream: StreamState }) {
   return (
-    <div className="stream-view">
+    <div
+      className="preview-stream-status"
+      style={{
+        flexShrink: 0,
+        padding: '10px 12px',
+        borderTop: '1px solid var(--semi-color-border)',
+        background: 'var(--semi-color-bg-1)',
+      }}
+    >
       <div className="stream-status">
         <span className="stream-dot" />
         <Text strong style={{ color: 'var(--semi-color-primary)' }}>
           {stream.phase}
         </Text>
       </div>
-      <div className="stream-progress">
+      <div className="stream-progress" style={{ margin: '8px 0' }}>
         <div className="stream-bar" />
       </div>
-      <div className="stream-meta">
+      <div className="stream-meta" style={{ marginBottom: 0 }}>
         {stream.outputTokens != null ? (
           <>已输出 token <b>{stream.outputTokens}</b></>
         ) : (
@@ -77,10 +85,6 @@ function StreamView({ stream }: { stream: StreamState }) {
         )}
         {stream.inputTokens != null && <> · 输入 <b>{stream.inputTokens}</b> tokens</>}
       </div>
-      <div
-        className="preview-frame stream-live"
-        dangerouslySetInnerHTML={{ __html: stream.partial }}
-      />
     </div>
   );
 }
@@ -246,7 +250,10 @@ export default function PreviewPanel({
         style={{ flex: 1, overflow: 'auto', background: 'var(--semi-color-fill-0)' }}
       >
         {loading && stream ? (
-          <StreamView stream={stream} />
+          <div
+            className="preview-frame stream-live"
+            dangerouslySetInnerHTML={{ __html: stream.partial }}
+          />
         ) : !html ? (
           <div
             style={{
@@ -266,6 +273,9 @@ export default function PreviewPanel({
           <div ref={frameRef} className="preview-frame" dangerouslySetInnerHTML={{ __html: html }} />
         )}
       </div>
+
+      {/* 生成中状态条：固定显示在滚动区下方、底部栏上方，生成完成后自动消失 */}
+      {loading && stream && <StreamStatusBar stream={stream} />}
 
       {/* 底部栏：左侧校验小字 + 右侧重新生成按钮 */}
       <div className="preview-footer" style={{ justifyContent: 'space-between' }}>
