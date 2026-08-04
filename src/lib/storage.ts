@@ -38,6 +38,14 @@ const DEFAULT_MODELS: StoredModel[] = [
     model: 'moonshot-v1-8k',
     preset: true,
   },
+  {
+    id: 'agnes-25-flash',
+    displayName: 'Agnes 2.5 Flash',
+    baseUrl: 'https://api.agnes-ai.cn/v1',
+    apiKey: '',
+    model: 'agnes-2.5-flash',
+    preset: true,
+  },
 ];
 
 function read<T>(key: string, fallback: T): T {
