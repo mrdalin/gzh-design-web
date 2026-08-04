@@ -6,6 +6,7 @@ import {
   Modal,
   Space,
   Input,
+  Select,
 } from '@douyinfe/semi-ui';
 import {
   IconCode,
@@ -20,6 +21,7 @@ import { fetchThemes, layoutClientSideStream, liveClean, generateArticle } from 
 import { htmlToMarkdown } from './lib/htmlToMarkdown';
 import { markdownToHtml } from './lib/markdownToHtml';
 import { useScrollSync } from './lib/useScrollSync';
+import mammoth from 'mammoth';
 import {
   loadModels,
   saveModels,
@@ -216,6 +218,42 @@ export default function App() {
         Toast.success('草稿已清除');
       },
     });
+  }
+
+  // Word(.docx) 上传解析：用 mammoth 客户端提取文本→设为 Markdown
+  async function handleDocxUpload(file: File) {
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const result = await mammoth.convertToMarkdown({ arrayBuffer }, {
+        styleMap: [
+          "b[style-name='Heading 1'] => h1:fresh",
+          "b[style-name='Heading 2'] => h2:fresh",
+          "b[style-name='Heading 3'] => h3:fresh",
+        ],
+      });
+      const md = result.value.trim();
+      if (!md) {
+        Toast.warning('Word 文件内容为空');
+        return;
+      }
+      // 同时更新 Markdown 区和富文本区
+      syncingFromRich.current = true;
+      setArticle(md);
+      setRichHtml(markdownToHtml(md));
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          syncingFromRich.current = false;
+        });
+      });
+      Toast.success(`Word 已解析为 Markdown（约 ${md.length} 字）`);
+      // 如果有转换警告（如图表/复杂格式），提示用户
+      if (result.messages.length > 0) {
+        console.log('[Word 解析警告]', result.messages);
+      }
+    } catch (e: any) {
+      console.error('[Word 解析失败]', e);
+      Toast.error('Word 文件解析失败，请确认是有效的 .docx 文件');
+    }
   }
 
   async function generateFromPrompt() {
@@ -464,6 +502,17 @@ export default function App() {
           </Text>
         </div>
         <Space>
+          <Select
+            size="small"
+            style={{ width: 170 }}
+            value={selectedModelId}
+            onChange={(v) => handleModelSelect(v as string)}
+            optionList={models.map((m) => ({
+              label: m.apiKey ? m.model : (m.displayName || m.model),
+              value: m.id,
+            }))}
+            placeholder="选择模型"
+          />
           <Button theme="borderless" icon={<IconHistory />} onClick={() => setHistoryVisible(true)}>
             排版历史
           </Button>
@@ -549,6 +598,7 @@ export default function App() {
               disabled={loading}
               textareaRef={mdTextareaRef}
               onNeedImgbbConfig={() => setImgbbVisible(true)}
+              onDocxFile={handleDocxUpload}
             />
             <Button
               theme="solid"
@@ -573,9 +623,6 @@ export default function App() {
         validation={result?.validation || null}
         onRegenerate={generate}
         stream={gen}
-        models={models}
-        selectedModelId={selectedModelId}
-        onModelSelect={handleModelSelect}
         readyForRegenerate={readyForRegen}
         scrollRef={previewScrollRef}
       />

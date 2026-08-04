@@ -1,15 +1,14 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Button, Space, Toast, Typography, Banner, Spin, Modal, Select } from '@douyinfe/semi-ui';
+import { Button, Space, Toast, Typography, Spin, Modal } from '@douyinfe/semi-ui';
 import {
   IconCopy,
-  IconRefresh,
   IconDownload,
   IconImage,
   IconGridView,
   IconSend,
 } from '@douyinfe/semi-icons';
 import JSZip from 'jszip';
-import type { ValidationResult, StoredModel } from '../types';
+import type { ValidationResult } from '../types';
 import { copyRichText } from '../lib/clipboard';
 import { countWords } from '../lib/wordCount';
 import { toCanvas, toPng } from '../lib/htmlToImage';
@@ -32,10 +31,6 @@ interface Props {
   onRegenerate: () => void;
   // 流式生成状态（边生成边显示）
   stream?: StreamState | null;
-  // 底部聊天式模型栏
-  models?: StoredModel[];
-  selectedModelId?: string;
-  onModelSelect?: (id: string) => void;
   // 重新生成按钮：排版完成后 1s 才可点击
   readyForRegenerate?: boolean;
   // 联动滚动：接收预览区滚动容器的 ref
@@ -97,9 +92,6 @@ export default function PreviewPanel({
   validation,
   onRegenerate,
   stream,
-  models = [],
-  selectedModelId,
-  onModelSelect,
   readyForRegenerate = false,
   scrollRef,
 }: Props) {
@@ -204,6 +196,16 @@ export default function PreviewPanel({
     }
   }
 
+  // 校验状态文案：仅用于底部小字提示
+  let validationText: string | null = null;
+  if (validation && !loading && html) {
+    if (validation.errors.length > 0) {
+      validationText = `⚠️ ${validation.errors.length} 处不兼容`;
+    } else {
+      validationText = '✅ 校验通过';
+    }
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div
@@ -265,70 +267,13 @@ export default function PreviewPanel({
         )}
       </div>
 
-      {validation && !loading && (validation.errors.length > 0 || validation.warnings.length > 0) && (
-        <div style={{ borderTop: '1px solid var(--semi-color-border)', padding: 8, maxHeight: 220, overflowY: 'auto' }}>
-          {validation.errors.length > 0 ? (
-            <Banner
-              type="danger"
-              closeIcon={null}
-              description={
-                <div>
-                  <Text strong>检测到 {validation.errors.length} 处可能不兼容，建议重新生成或手动调整后使用：</Text>
-                  <ul style={{ margin: '4px 0 0', paddingLeft: 18 }}>
-                    {validation.errors.map((e, i) => (
-                      <li key={i} style={{ fontSize: 12 }}>{e}</li>
-                    ))}
-                  </ul>
-                </div>
-              }
-            />
-          ) : (
-            <Banner
-              type="info"
-              closeIcon={null}
-              description={
-                <Text style={{ color: 'var(--semi-color-success)' }}>校验通过，可放心复制粘贴。</Text>
-              }
-            />
-          )}
-          {validation.warnings.length > 0 && (
-            <div
-              style={{
-                marginTop: 6,
-                padding: '8px 10px',
-                borderRadius: 6,
-                background: 'var(--semi-color-warning-light-default)',
-                border: '1px solid var(--semi-color-warning-light-active)',
-              }}
-            >
-              <Text type="warning" size="small" style={{ fontWeight: 600 }}>
-                {validation.errors.length === 0
-                  ? '✅ 仅有以下提示（橙色 warning，无红色 error），通常可直接使用，无需担心：'
-                  : '同时还有以下提示（不影响使用）：'}
-              </Text>
-              <ul style={{ margin: '4px 0 0', paddingLeft: 18 }}>
-                {validation.warnings.map((w, i) => (
-                  <li key={i} style={{ fontSize: 12, color: 'var(--semi-color-warning)' }}>{w}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* 底部聊天式栏：模型选择 + 重新生成 */}
-      <div className="preview-footer">
-        <Select
-          size="small"
-          style={{ width: 180 }}
-          value={selectedModelId}
-          onChange={(v) => onModelSelect?.(v as string)}
-          optionList={models.map((m) => ({
-            label: m.apiKey ? m.model : (m.displayName || m.model),
-            value: m.id,
-          }))}
-          placeholder="选择模型"
-        />
+      {/* 底部栏：左侧校验小字 + 右侧重新生成按钮 */}
+      <div className="preview-footer" style={{ justifyContent: 'space-between' }}>
+        {validationText ? (
+          <Text type="tertiary" size="small" style={{ opacity: 0.7, userSelect: 'none', whiteSpace: 'nowrap' }}>
+            {validationText}
+          </Text>
+        ) : <span />}
         <Button
           theme="solid"
           icon={<IconSend />}
