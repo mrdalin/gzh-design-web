@@ -23,6 +23,15 @@ export const IMGBB_EXPIRY_OPTIONS: { label: string; value: number }[] = [
 
 const DEFAULT_MODELS: StoredModel[] = [
   {
+    id: 'agnes-25-flash',
+    displayName: 'Agnes（中国站）',
+    // Agnes 分国内(agnes-ai.cn)与国外站点，这里用国内站 api.agnes-ai.cn
+    baseUrl: 'https://api.agnes-ai.cn/v1',
+    apiKey: '',
+    model: 'agnes-2.5-flash',
+    preset: true,
+  },
+  {
     id: 'deepseek',
     displayName: 'DeepSeek',
     baseUrl: 'https://api.deepseek.com/v1',
@@ -36,15 +45,6 @@ const DEFAULT_MODELS: StoredModel[] = [
     baseUrl: 'https://api.moonshot.cn/v1',
     apiKey: '',
     model: 'moonshot-v1-8k',
-    preset: true,
-  },
-  {
-    id: 'agnes-25-flash',
-    displayName: 'Agnes 2.5 Flash（中国站）',
-    // Agnes 分国内(agnes-ai.cn)与国外站点，这里用国内站 api.agnes-ai.cn
-    baseUrl: 'https://api.agnes-ai.cn/v1',
-    apiKey: '',
-    model: 'agnes-2.5-flash',
     preset: true,
   },
 ];

@@ -37,7 +37,7 @@ import {
   saveCustomLib,
 } from './lib/storage';
 import { copyRichText } from './lib/clipboard';
-import { REPO_URL } from './config';
+import { REPO_URL, APP_VERSION } from './config';
 
 import ThemeBar from './components/ThemeBar';
 import RichEditor from './components/RichEditor';
@@ -298,6 +298,9 @@ export default function App() {
               源码
             </Button>
           )}
+          <Text type="tertiary" size="small" style={{ opacity: 0.45, userSelect: 'none' }}>
+            v{APP_VERSION}
+          </Text>
           <Dropdown trigger="click" position="bottomRight">
             <Button theme="borderless" icon={<IconSetting />}>
               配置 API
