@@ -15,6 +15,7 @@ import {
 } from '@douyinfe/semi-icons';
 import { uploadImage } from '../lib/api';
 import { countWords } from '../lib/wordCount';
+import { htmlToMarkdown } from '../lib/htmlToMarkdown';
 
 const { Text } = Typography;
 
@@ -25,6 +26,8 @@ interface Props {
   imgbbExpiry?: number;
   disabled?: boolean;
   onNeedImgbbConfig?: () => void;
+  /** 粘贴内容后自动转 Markdown 回调（传入转换后的 md 文本） */
+  onAutoConvert?: (markdown: string) => void;
 }
 
 const ALLOWED_TAGS = new Set([
@@ -88,7 +91,7 @@ function sanitizeWordHtml(raw: string): string {
   return tmp.innerHTML;
 }
 
-export default function RichEditor({ html, onChange, imgbbKey, imgbbExpiry, disabled, onNeedImgbbConfig }: Props) {
+export default function RichEditor({ html, onChange, imgbbKey, imgbbExpiry, disabled, onNeedImgbbConfig, onAutoConvert }: Props) {
   const editorRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -132,6 +135,17 @@ export default function RichEditor({ html, onChange, imgbbKey, imgbbExpiry, disa
       document.execCommand('insertHTML', false, clean);
       emit();
       Toast.success('已粘贴并保留格式');
+      // 自动转 Markdown 到中间编辑器
+      if (onAutoConvert) {
+        // 等 DOM 更新后再读取编辑器内容转换
+        requestAnimationFrame(() => {
+          const currentHtml = editorRef.current?.innerHTML || '';
+          if (currentHtml.replace(/<[^>]+>/g, '').trim()) {
+            const md = htmlToMarkdown(currentHtml);
+            onAutoConvert(md);
+          }
+        });
+      }
     }
   }
 

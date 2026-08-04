@@ -14,6 +14,7 @@ import {
   IconArrowRight,
   IconSetting,
   IconImage,
+  IconHistory,
 } from '@douyinfe/semi-icons';
 import type { HistoryItem, LayoutResult, StoredModel, Theme } from './types';
 import { fetchThemes, layoutClientSideStream, liveClean, generateArticle } from './lib/api';
@@ -81,6 +82,7 @@ export default function App() {
   const [modelVisible, setModelVisible] = useState(false);
   const [wizardVisible, setWizardVisible] = useState(false);
   const [viewItem, setViewItem] = useState<HistoryItem | null>(null);
+  const [readyForRegen, setReadyForRegen] = useState(false);
 
   useEffect(() => {
     fetchThemes()
@@ -202,6 +204,7 @@ export default function App() {
       outputTokens: undefined,
     });
     setLoading(true);
+    setReadyForRegen(false);
     const genStartTime = Date.now();
     console.log('[排版诊断] 开始生成（流式直连）', {
       articleLen: liveArticle.length,
@@ -299,6 +302,8 @@ export default function App() {
         return;
       }
       setResult(res);
+      setReadyForRegen(false);
+      setTimeout(() => setReadyForRegen(true), 1000);
 
       const themeName =
         selectedThemeId === 'custom'
@@ -384,6 +389,9 @@ export default function App() {
           </Text>
         </div>
         <Space>
+          <Button theme="borderless" icon={<IconHistory />} onClick={() => setHistoryVisible(true)}>
+            排版历史
+          </Button>
           {REPO_URL && (
             <Button theme="borderless" icon={<IconCode />} onClick={() => window.open(REPO_URL, '_blank')}>
               源码
@@ -412,7 +420,6 @@ export default function App() {
         customName={customThemeName}
         onSelect={handleThemeSelect}
         onOpenWizard={() => setWizardVisible(true)}
-        onOpenHistory={() => setHistoryVisible(true)}
       />
 
       <div className="app-shell app-shell-proto">
@@ -426,6 +433,7 @@ export default function App() {
               imgbbExpiry={imgbbExpiry}
               disabled={generating}
               onNeedImgbbConfig={() => setImgbbVisible(true)}
+              onAutoConvert={(md) => { setArticle(md); Toast.success('已自动转换为 Markdown'); }}
             />
 
             <Button
@@ -498,6 +506,7 @@ export default function App() {
         models={models}
         selectedModelId={selectedModelId}
         onModelSelect={handleModelSelect}
+        readyForRegenerate={readyForRegen}
       />
         </aside>
       </div>

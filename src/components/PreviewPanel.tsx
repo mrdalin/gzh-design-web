@@ -6,6 +6,7 @@ import {
   IconDownload,
   IconImage,
   IconGridView,
+  IconSend,
 } from '@douyinfe/semi-icons';
 import JSZip from 'jszip';
 import type { ValidationResult, StoredModel } from '../types';
@@ -35,6 +36,8 @@ interface Props {
   models?: StoredModel[];
   selectedModelId?: string;
   onModelSelect?: (id: string) => void;
+  // 重新生成按钮：排版完成后 1s 才可点击
+  readyForRegenerate?: boolean;
 }
 
 function sanitizeFileName(s: string): string {
@@ -70,8 +73,11 @@ function StreamView({ stream }: { stream: StreamState }) {
         <div className="stream-bar" />
       </div>
       <div className="stream-meta">
-        已生成 <b>{stream.chars}</b> 字
-        {stream.outputTokens != null && <> · 输出 <b>{stream.outputTokens}</b> tokens</>}
+        {stream.outputTokens != null ? (
+          <>已输出 token <b>{stream.outputTokens}</b></>
+        ) : (
+          <>已生成 <b>{stream.chars}</b> 字</>
+        )}
         {stream.inputTokens != null && <> · 输入 <b>{stream.inputTokens}</b> tokens</>}
       </div>
       <div
@@ -92,6 +98,7 @@ export default function PreviewPanel({
   models = [],
   selectedModelId,
   onModelSelect,
+  readyForRegenerate = false,
 }: Props) {
   const frameRef = useRef<HTMLDivElement>(null);
   const [shotVisible, setShotVisible] = useState(false);
@@ -284,7 +291,12 @@ export default function PreviewPanel({
           }))}
           placeholder="选择模型"
         />
-        <Button theme="light" icon={<IconRefresh />} onClick={onRegenerate} disabled={loading}>
+        <Button
+          theme="solid"
+          icon={<IconSend />}
+          onClick={onRegenerate}
+          disabled={loading || !html || !readyForRegenerate}
+        >
           重新生成
         </Button>
       </div>
