@@ -18,8 +18,11 @@ async function onRequestPostHandler({ request }: { request: Request }) {
     if (!imageB64) return json({ error: '缺少图片文件' }, 400);
     if (!key) return json({ error: '缺少 imgbb API key' }, 400);
 
+    // strip data URL prefix（前端 readAsDataURL 会带上 "data:image/xxx;base64," 前缀，
+    // imgbb 只接受纯 base64 字符串，否则返回 code 120 Invalid base64 string）
+    const rawB64 = imageB64.replace(/^data:[^;]+;base64,/, '');
     const fd = new FormData();
-    fd.append('image', imageB64);
+    fd.append('image', rawB64);
 
     const imgbbUrl =
       `https://api.imgbb.com/1/upload?key=${encodeURIComponent(key)}` +
