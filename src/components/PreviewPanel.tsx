@@ -153,7 +153,7 @@ export default function PreviewPanel({
         }}
       >
         <Title heading={6} style={{ margin: 0 }}>
-          手机预览{title ? ` · ${title}` : ''} · 约 {countWords(html)} 字
+          手机预览 · 约 {countWords(html)} 字
         </Title>
         <Space>
           <Button theme="light" icon={<IconRefresh />} onClick={onRegenerate} disabled={loading}>

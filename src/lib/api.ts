@@ -24,7 +24,7 @@ async function callLLMDirect(
         model: model.model,
         messages,
         temperature: 0.7,
-        max_tokens: opts?.maxTokens ?? 8192,
+        max_tokens: opts?.maxTokens ?? 32768,
         stream: false,
       }),
       signal: controller.signal,
