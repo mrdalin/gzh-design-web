@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Button, Space, Toast, Typography, Banner, Spin, Modal, Select } from '@douyinfe/semi-ui';
 import {
   IconCopy,
