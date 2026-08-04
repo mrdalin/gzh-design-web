@@ -40,7 +40,8 @@ const DEFAULT_MODELS: StoredModel[] = [
   },
   {
     id: 'agnes-25-flash',
-    displayName: 'Agnes 2.5 Flash',
+    displayName: 'Agnes 2.5 Flash（中国站）',
+    // Agnes 分国内(agnes-ai.cn)与国外站点，这里用国内站 api.agnes-ai.cn
     baseUrl: 'https://api.agnes-ai.cn/v1',
     apiKey: '',
     model: 'agnes-2.5-flash',

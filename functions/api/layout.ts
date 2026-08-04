@@ -7,7 +7,7 @@ import { validate } from '../../worker-lib/validate';
 import { extractDocx } from '../../worker-lib/extractDocx';
 import { getThemeComponentLib, getCommonComponents, getThemeById } from '../../worker-lib/themes';
 import { SKILL_MD } from '../../worker-lib/skillAssets';
-import { MOYU_GREEN_SAMPLE } from '../../worker-lib/sampleLayouts';
+import { LAYOUT_STYLE_GUIDE } from '../../worker-lib/layoutStyle';
 
 export const onRequestOptions: any = () => new Response(null, { headers: cors() });
 export const onRequestPost = onRequestPostHandler;
@@ -70,10 +70,9 @@ async function onRequestPostHandler({ request }: { request: Request }) {
 - 整体在任意手机宽度下都不应出现横向滚动条或内容被裁切。
 - 不要使用 <script>，不要用会触发微信拦截的外链跳转。
 
-# 标准排版样例（摸鱼绿主题，供结构与风格参考）
-以下是一份该主题的标准排版样例，请严格模仿其整体结构、章节样式、组件用法与排版密度（封面 → 目录 → 引言卡片 → 分章「大号数字编号 + PART 标签 + 章节标题 + 英文副标」→ 正文段落「关键词下划线高亮 + 重点词主色加粗」→ 引用/说明卡片 → 圆角标签要点列表 → 表格「绿头斑马纹」→ 金句卡片 → 结语 → 署名 → 互动三连）：
-${MOYU_GREEN_SAMPLE}
-注意：配色请改用当前主题「${themeName}」的主色；该样例仅用于学习结构与风格，你必须基于「需要排版的文章」的实际内容重新排版，不得照抄样例文字。
+# 排版结构方案（参考「摸鱼绿」风格提炼，须严格遵循）
+${LAYOUT_STYLE_GUIDE}
+注意：以上方案基于「摸鱼绿」风格提炼，配色请改用当前主题「${themeName}」的主色；你必须基于「需要排版的文章」的实际内容重新排版，不得虚构章节与数据，也不得照抄任何样例文字。
 
 # 内容完整性要求（必须严格遵守，否则视为失败）
 - 必须完整呈现原文的所有章节与要点，不得省略、不得只保留标题或每节第一句话；正文按原文顺序连续展开。
