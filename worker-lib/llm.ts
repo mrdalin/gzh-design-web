@@ -41,7 +41,7 @@ export async function chatCompletion(
         model: cfg.model,
         messages,
         temperature: opts?.temperature ?? 0.7,
-        max_tokens: 32768,
+        max_tokens: 8192,
         stream: false,
       }),
       signal: controller.signal,
