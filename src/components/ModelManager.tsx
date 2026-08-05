@@ -31,6 +31,8 @@ const PRESET_API_URLS: Record<string, string> = {
   deepseek: 'https://platform.deepseek.com/api_keys',
   kimi: 'https://platform.moonshot.cn/console/api-keys',
   'agnes-25-flash': 'https://platform.agnes-ai.cn/settings/apiKeys',
+  glm: 'https://open.bigmodel.cn/usercenter/apikeys',
+  qwen: 'https://dashscope.console.aliyun.com/apiKey',
 };
 
 // 自定义模型字段固定顺序：显示名称（可选）→ API 地址 → API KEY → 模型名称

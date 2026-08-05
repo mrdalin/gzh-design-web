@@ -44,92 +44,26 @@ export function modelLabel(m: StoredModel): string {
   return cfg ? m.model || m.displayName || '' : `${m.displayName || m.model}（未配置）`;
 }
 
-// 白色品牌标记（透明背景，配合渐变容器使用）
-function BrandMark({ brand, displayName }: { brand: BrandKey; displayName: string }) {
-  const common = { width: '100%', height: '100%', viewBox: '0 0 24 24' } as const;
+// 头像字母：预设用固定首字母（智谱→Z），其余取 displayName 首字符大写
+const BRAND_INITIAL: Record<BrandKey, string> = {
+  agnes: 'A',
+  deepseek: 'D',
+  kimi: 'K',
+  glm: 'Z',
+  minimax: 'M',
+  qwen: 'Q',
+  fallback: '',
+};
 
-  switch (brand) {
-    case 'agnes':
-      return (
-        <svg {...common}>
-          <path
-            d="M12 4.5l6.4 13.2h-3.1l-1.2-2.8h-4.2l-1.2 2.8H5.6L12 4.5z m-1.2 7.6h2.4L12 9.3l-1.2 3z"
-            fill="#fff"
-          />
-        </svg>
-      );
-    case 'deepseek':
-      return (
-        <svg {...common}>
-          <path d="M7 4.5h4.6a6.5 6.5 0 010 13H7V4.5z" fill="#fff" />
-          <path
-            d="M7 17.5h4.6a3.2 3.2 0 000-6.4H7"
-            stroke="#3358E0"
-            strokeWidth="2.2"
-            fill="none"
-          />
-        </svg>
-      );
-    case 'kimi':
-      return (
-        <svg {...common}>
-          <path
-            d="M5 6.5h14a2 2 0 012 2v6.5a2 2 0 01-2 2H11l-4 3.2v-3.2H5a2 2 0 01-2-2V8.5a2 2 0 012-2z"
-            fill="#fff"
-          />
-        </svg>
-      );
-    case 'glm':
-      return (
-        <svg {...common}>
-          <g fill="#fff">
-            <rect x="6" y="6" width="5" height="5" rx="1" />
-            <rect x="13" y="6" width="5" height="5" rx="1" />
-            <rect x="6" y="13" width="5" height="5" rx="1" />
-            <rect x="13" y="13" width="5" height="5" rx="1" />
-          </g>
-        </svg>
-      );
-    case 'minimax':
-      return (
-        <svg {...common}>
-          <path
-            d="M5 18L9 6l3 7 3-7 4 12"
-            stroke="#fff"
-            strokeWidth="2.4"
-            fill="none"
-            strokeLinejoin="round"
-            strokeLinecap="round"
-          />
-        </svg>
-      );
-    case 'qwen':
-      return (
-        <svg {...common}>
-          <circle cx="11.3" cy="12" r="6.2" stroke="#fff" strokeWidth="2.2" fill="none" />
-          <path d="M15.6 16.3L19 19.6" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" />
-        </svg>
-      );
-    default:
-      return (
-        <svg {...common}>
-          <text
-            x="12"
-            y="16.5"
-            fontSize="13"
-            fontWeight="700"
-            textAnchor="middle"
-            fill="#fff"
-            fontFamily="system-ui, sans-serif"
-          >
-            {(displayName || 'M').trim().charAt(0).toUpperCase()}
-          </text>
-        </svg>
-      );
-  }
+// 头像展示的字母（预设品牌用固定缩写；其余取 displayName 第一个大写字母）
+export function avatarLetter(m: StoredModel): string {
+  const brand = detectBrand(m);
+  if (BRAND_INITIAL[brand]) return BRAND_INITIAL[brand];
+  const s = (m.displayName || m.model || 'M').trim();
+  return s.charAt(0).toUpperCase();
 }
 
-// 模型头像：圆角方形渐变底 + 白色品牌标记
+// 模型头像：圆角方形渐变底 + 白色首字母
 export function ModelAvatar({
   model,
   size = 24,
@@ -138,7 +72,7 @@ export function ModelAvatar({
   size?: number;
 }) {
   const brand = detectBrand(model);
-  const mark = Math.round(size * 0.62);
+  const letter = avatarLetter(model);
   return (
     <span
       style={{
@@ -154,8 +88,17 @@ export function ModelAvatar({
         boxShadow: '0 1px 2px rgba(0,0,0,0.12)',
       }}
     >
-      <span style={{ width: mark, height: mark, display: 'inline-flex' }}>
-        <BrandMark brand={brand} displayName={model.displayName} />
+      <span
+        style={{
+          color: '#fff',
+          fontWeight: 700,
+          fontSize: Math.round(size * 0.46),
+          lineHeight: 1,
+          fontFamily: 'system-ui, -apple-system, sans-serif',
+          userSelect: 'none',
+        }}
+      >
+        {letter}
       </span>
     </span>
   );
