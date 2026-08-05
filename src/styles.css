@@ -271,6 +271,62 @@ body {
   color: var(--semi-color-primary) !important;
 }
 
+/* 模型选择触发器：头像 + 名称 + 箭头 */
+.model-select-trigger {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px !important;
+  max-width: 220px;
+}
+.model-select-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+/* 模型下拉浮层菜单 */
+.model-dropdown-menu {
+  padding: 4px;
+  min-width: 230px;
+  max-height: 340px;
+  overflow-y: auto;
+}
+.model-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--semi-color-text-0);
+  transition: background 0.12s ease;
+}
+.model-dropdown-item:hover {
+  background: var(--semi-color-fill-0);
+}
+.model-dropdown-item.active {
+  background: rgba(var(--semi-blue-5), 0.12);
+}
+.model-dropdown-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.model-dropdown-tag {
+  flex-shrink: 0;
+  font-size: 11px;
+  line-height: 16px;
+  padding: 0 6px;
+  border-radius: 4px;
+  color: var(--semi-color-primary);
+  background: rgba(var(--semi-blue-5), 0.12);
+}
+
 .theme-bar-info {
   min-width: 0;
 }

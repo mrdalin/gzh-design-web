@@ -13,6 +13,7 @@ import {
 import { IconPlus, IconDelete, IconRefresh } from '@douyinfe/semi-icons';
 import type { StoredModel } from '../types';
 import { loadModels, saveModels, DEFAULT_MODELS } from '../lib/storage';
+import { ModelAvatar, isModelConfigured } from '../modelIcons';
 
 const { Text, Paragraph } = Typography;
 
@@ -133,6 +134,7 @@ export default function ModelManager({
             }}
           >
             <Space>
+              <ModelAvatar model={m} size={28} />
               <Tag
                 color={selectedId === m.id ? 'blue' : 'grey'}
                 onClick={() => onSelect(m.id)}
@@ -141,7 +143,7 @@ export default function ModelManager({
                 {selectedId === m.id ? '使用中' : '选择'}
               </Tag>
               <span>
-                <b>{m.displayName || m.model}</b>
+                <b>{isModelConfigured(m) ? (m.model || m.displayName) : (m.displayName || m.model)}</b>
                 {m.preset && <Tag size="small" color="blue" style={{ marginLeft: 6 }}>预设</Tag>}
                 {m.preset && !m.apiKey && PRESET_API_URLS[m.id] && (
                   <a

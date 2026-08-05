@@ -6,7 +6,8 @@ import {
   Modal,
   Space,
   Input,
-  Select,
+  Dropdown,
+  Divider,
   Badge,
 } from '@douyinfe/semi-ui';
 import {
@@ -16,8 +17,12 @@ import {
   IconSetting,
   IconImage,
   IconHistory,
+  IconChevronDown,
+  IconPlus,
+  IconTick,
 } from '@douyinfe/semi-icons';
 import type { HistoryItem, LayoutResult, StoredModel, Theme } from './types';
+import { ModelAvatar, isModelConfigured, modelLabel } from './modelIcons';
 import { fetchThemes, layoutClientSideStream, liveClean, generateArticle, uploadImageB64 } from './lib/api';
 import { htmlToMarkdown } from './lib/htmlToMarkdown';
 import { markdownToHtml } from './lib/markdownToHtml';
@@ -66,10 +71,6 @@ const PLACEHOLDER_IMG =
   );
 
 // 模型是否「配置良好」：需 baseUrl + apiKey + model 三者齐全（预设模型的 Key 默认为空）。
-function isModelConfigured(m?: StoredModel): boolean {
-  return !!(m && m.baseUrl && m.apiKey && m.model);
-}
-
 export default function App() {
   // 草稿：刷新页面后从本地缓存恢复，避免编辑内容丢失
   const initialDraft = loadDraft();
@@ -611,22 +612,64 @@ export default function App() {
               />
             ))}
           </span>
-          <Select
-            size="small"
-            style={{ width: 190 }}
-            value={selectedModelId}
-            onChange={(v) => handleModelSelect(v as string)}
-            optionList={[
-              ...models.map((m) => ({
-                label: isModelConfigured(m)
-                  ? m.model
-                  : `${m.displayName || m.model}（未配置）`,
-                value: m.id,
-              })),
-              { label: '➕ 添加自定义模型…', value: '__add_custom__' },
-            ]}
-            placeholder="选择模型"
-          />
+          <Dropdown
+            trigger="click"
+            position="bottomLeft"
+            className="model-select-dropdown"
+            content={
+              <div className="model-dropdown-menu">
+                {models.map((m) => {
+                  const active = m.id === selectedModelId;
+                  return (
+                    <div
+                      key={m.id}
+                      className={`model-dropdown-item${active ? ' active' : ''}`}
+                      onClick={() => handleModelSelect(m.id)}
+                    >
+                      <ModelAvatar model={m} size={26} />
+                      <span className="model-dropdown-name">{modelLabel(m)}</span>
+                      {m.preset && (
+                        <span className="model-dropdown-tag">预设</span>
+                      )}
+                      {active && (
+                        <IconTick
+                          style={{ marginLeft: 'auto', color: 'var(--gzh-accent)', flexShrink: 0 }}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+                <Divider style={{ margin: '6px 0' }} />
+                <div
+                  className="model-dropdown-item"
+                  onClick={() => {
+                    setModelVisible(true);
+                  }}
+                >
+                  <IconPlus style={{ color: 'var(--gzh-accent)', flexShrink: 0 }} />
+                  <span className="model-dropdown-name">管理模型 / 添加自定义</span>
+                </div>
+              </div>
+            }
+          >
+            <Button className="header-action-btn model-select-trigger" theme="borderless">
+              {(() => {
+                const sel = models.find((m) => m.id === selectedModelId);
+                return sel ? (
+                  <ModelAvatar model={sel} size={22} />
+                ) : (
+                  <IconSetting />
+                );
+              })()}
+              <span className="model-select-label">
+                {(() => {
+                  const sel = models.find((m) => m.id === selectedModelId);
+                  return sel ? modelLabel(sel) : '选择模型';
+                })()}
+              </span>
+              <IconChevronDown />
+            </Button>
+          </Dropdown>
           {history.length > 0 ? (
             <Badge count={history.length} overflowCount={99} type="primary">
               <Button className="header-action-btn" icon={<IconHistory />} onClick={() => setHistoryVisible(true)}>

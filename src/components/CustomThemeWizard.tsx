@@ -6,12 +6,15 @@ import {
   Toast,
   Typography,
   Input,
-  Select,
+  Dropdown,
+  Divider,
   Spin,
   Radio,
 } from '@douyinfe/semi-ui';
+import { IconChevronDown, IconTick, IconSetting } from '@douyinfe/semi-icons';
 import type { StoredModel } from '../types';
 import { generateTheme } from '../lib/api';
+import { ModelAvatar, modelLabel } from '../modelIcons';
 
 const { Text, Paragraph } = Typography;
 
@@ -128,17 +131,49 @@ export default function CustomThemeWizard({
         <Input style={{ width: 160 }} value={themeName} onChange={(v) => setThemeName(v)} />
       </Space>
 
-      <Space wrap style={{ marginBottom: 12 }}>
+      <Space wrap align="center" style={{ marginBottom: 12 }}>
         <Text>生成模型：</Text>
-        <Select
-          style={{ width: 220 }}
-          value={modelId}
-          onChange={(v) => setModelId(v as string)}
-          optionList={models.map((m) => ({
-            label: m.displayName || m.model,
-            value: m.id,
-          }))}
-        />
+        <Dropdown
+          trigger="click"
+          position="bottomLeft"
+          className="model-select-dropdown"
+          content={
+            <div className="model-dropdown-menu">
+              {models.map((m) => {
+                const active = m.id === modelId;
+                return (
+                  <div
+                    key={m.id}
+                    className={`model-dropdown-item${active ? ' active' : ''}`}
+                    onClick={() => setModelId(m.id)}
+                  >
+                    <ModelAvatar model={m} size={26} />
+                    <span className="model-dropdown-name">{modelLabel(m)}</span>
+                    {active && (
+                      <IconTick
+                        style={{ marginLeft: 'auto', color: 'var(--gzh-accent)', flexShrink: 0 }}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          }
+        >
+          <Button theme="borderless" className="model-select-trigger">
+            {(() => {
+              const sel = models.find((m) => m.id === modelId);
+              return sel ? <ModelAvatar model={sel} size={22} /> : <IconSetting />;
+            })()}
+            <span className="model-select-label">
+              {(() => {
+                const sel = models.find((m) => m.id === modelId);
+                return sel ? modelLabel(sel) : '选择模型';
+              })()}
+            </span>
+            <IconChevronDown />
+          </Button>
+        </Dropdown>
       </Space>
 
       <Input
