@@ -9,6 +9,7 @@ import {
   Dropdown,
   Divider,
   Badge,
+  Spin,
 } from '@douyinfe/semi-ui';
 import {
   IconCode,
@@ -70,6 +71,16 @@ const PLACEHOLDER_IMG =
     '<svg xmlns="http://www.w3.org/2000/svg" width="320" height="160"><rect width="100%" height="100%" fill="#f0f0f0"/><text x="50%" y="50%" font-family="-apple-system,Segoe UI,sans-serif" font-size="14" fill="#999" text-anchor="middle" dominant-baseline="middle">图片占位（配置「图片 API」后重传 Word 可自动上传）</text></svg>'
   );
 
+// 把 Markdown 里残留的 data:image base64 图片（解析中预览图 / 上传失败占位图）
+// 统一替换成干净的占位符，避免 base64 长串污染编辑区。已成功拿到真实 URL 的图不受影响。
+function sanitizeMdImages(md: string): string {
+  let idx = 0;
+  return md.replace(/!\[([^\]]*)\]\((data:image\/[^)]+)\)/g, (_m, alt: string) => {
+    idx++;
+    return `![图片 ${idx}（待更新）](${alt && alt !== 'image' ? alt : '#pending'})`;
+  });
+}
+
 // 模型是否「配置良好」：需 baseUrl + apiKey + model 三者齐全（预设模型的 Key 默认为空）。
 export default function App() {
   // 草稿：刷新页面后从本地缓存恢复，避免编辑内容丢失
@@ -130,6 +141,9 @@ export default function App() {
   const docxBusyRef = useRef(false);
   // Word 图片正在后台上传 imgbb：true 时禁用「生成排版」按钮（内容尚未就绪）。
   const [wordImageUploading, setWordImageUploading] = useState(false);
+  // Word 解析中（含图片后台上传）的受控状态：用于显示内联状态条，收尾时可靠消失，
+  // 取代原先「duration:0 的 Toast」——那段 Toast 在某些情况下无法被正确关闭而常驻顶部。
+  const [wordParsing, setWordParsing] = useState(false);
 
   // 三栏联动滚动的容器 ref（富文本区 / Markdown 区 / 预览区）
   const richScrollRef = useRef<HTMLDivElement | null>(null);
@@ -281,11 +295,8 @@ export default function App() {
     }
     docxBusyRef.current = true;
     const hasKey = !!imgbbKey?.trim();
-    // 解析中提示（不自动消失，待收尾时关闭）
-    const tId = Toast.info({
-      content: hasKey ? '正在解析 Word，文字优先显示，图片稍后自动上传…' : '正在解析 Word，图片需配置图床后重传…',
-      duration: 0,
-    });
+    // 解析中状态（受控内联状态条，收尾时由 setWordParsing(false) 可靠关闭，不再依赖 Toast.close）
+    setWordParsing(true);
     try {
       const arrayBuffer = await file.arrayBuffer();
 
@@ -318,13 +329,15 @@ export default function App() {
           const finalHtml = document.querySelector('.rich-editor')?.innerHTML || '';
           syncingFromRich.current = true;
           setRichHtml(finalHtml);
-          setArticle(htmlToMarkdown(finalHtml));
+          // 关键：富文本 DOM 里可能仍残留 data:image（解析中预览 / 上传失败占位），
+          // 这里把 Markdown 重新派生后做一次清洗，确保编辑区永不出现 base64 长串。
+          setArticle(sanitizeMdImages(htmlToMarkdown(finalHtml)));
           requestAnimationFrame(() => {
             requestAnimationFrame(() => {
               syncingFromRich.current = false;
             });
           });
-          Toast.close(tId);
+          setWordParsing(false);
           Toast.success(
             `Word 已解析为 Markdown（约 ${md.length} 字${totalImages ? `，${totalImages} 张图片` : ''}）`
           );
@@ -376,7 +389,7 @@ export default function App() {
       });
       md = result.value.trim();
       if (!md) {
-        Toast.close(tId);
+        setWordParsing(false);
         docxBusyRef.current = false;
         setWordImageUploading(false);
         Toast.warning('Word 文件内容为空');
@@ -418,7 +431,7 @@ export default function App() {
         });
       });
     } catch (e: any) {
-      Toast.close(tId);
+      setWordParsing(false);
       docxBusyRef.current = false;
       setWordImageUploading(false);
       console.error('[Word 解析失败]', e);
@@ -807,6 +820,27 @@ export default function App() {
         onSelect={handleThemeSelect}
         onOpenWizard={() => setWizardVisible(true)}
       />
+
+      {wordParsing && (
+        <div
+          data-testid="word-parsing-banner"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            margin: '8px 12px 0',
+            padding: '8px 12px',
+            background: 'var(--semi-color-primary-light-default, #e8f3ff)',
+            color: 'var(--semi-color-text-0, #1c1f23)',
+            borderRadius: 6,
+            fontSize: 13,
+            flexShrink: 0,
+          }}
+        >
+          <Spin size="small" />
+          <span>正在解析 Word，文字优先显示，图片稍后自动上传…</span>
+        </div>
+      )}
 
       <div className="app-shell app-shell-proto">
         {/* 左：富文本编辑器 */}
