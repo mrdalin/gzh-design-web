@@ -620,7 +620,7 @@ export default function App() {
               ...models.map((m) => ({
                 label: isModelConfigured(m)
                   ? m.model
-                  : `${m.model}（未配置）`,
+                  : `${m.displayName || m.model}（未配置）`,
                 value: m.id,
               })),
               { label: '➕ 添加自定义模型…', value: '__add_custom__' },
