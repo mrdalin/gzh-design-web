@@ -130,6 +130,30 @@ body {
   gap: 8px;
 }
 
+/* 右上角主题色切换：版本号 + 3 个横排色块 */
+.theme-switch {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 4px;
+  flex-shrink: 0;
+}
+.theme-swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  margin-left: 6px;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.theme-swatch:hover {
+  transform: scale(1.15);
+}
+.theme-swatch.active {
+  cursor: default;
+}
+
 .app-shell {
   flex: 1;
   min-height: 0;
@@ -185,7 +209,7 @@ body {
   font-size: 16px;
   font-weight: 700;
   letter-spacing: 1px;
-  color: #069A4C;
+  color: var(--gzh-accent, #069A4C);
   white-space: nowrap;
   user-select: none;
   cursor: default;

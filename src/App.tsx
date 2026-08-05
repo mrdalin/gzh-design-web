@@ -44,6 +44,7 @@ import {
 } from './lib/storage';
 import { copyRichText } from './lib/clipboard';
 import { REPO_URL, APP_VERSION } from './config';
+import { COLOR_THEMES, getStoredThemeId, applyTheme, THEME_STORAGE_KEY } from './colorThemes';
 
 import ThemeBar from './components/ThemeBar';
 import RichEditor from './components/RichEditor';
@@ -87,6 +88,17 @@ export default function App() {
 
   const [imgbbKey, setImgbbKey] = useState('');
   const [imgbbExpiry, setImgbbExpiry] = useState(0);
+
+  // 界面主题色（按钮/链接/选中边框等主色），默认公众号绿，用户可在右上角切换并持久化。
+  const [colorTheme, setColorTheme] = useState(getStoredThemeId());
+  useEffect(() => {
+    applyTheme(colorTheme);
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, colorTheme);
+    } catch {
+      /* ignore */
+    }
+  }, [colorTheme]);
 
   // 当前选中主题名（用于导出文件名区分不同主题）
   const currentThemeName = useMemo(() => {
@@ -573,9 +585,6 @@ export default function App() {
             </defs>
           </svg>
           微信公众号 AI 排版
-          <Text type="tertiary" size="small" style={{ opacity: 0.4, userSelect: 'none', fontWeight: 400, fontSize: 11 }}>
-            v{APP_VERSION}
-          </Text>
         </div>
         <Space>
           <Select
@@ -608,6 +617,28 @@ export default function App() {
           <Button theme="borderless" icon={<IconSetting />} onClick={() => setModelVisible(true)}>
             模型 API
           </Button>
+          <span className="theme-switch" title="切换主题色">
+            <Text type="tertiary" size="small" style={{ opacity: 0.4, userSelect: 'none', fontWeight: 400, fontSize: 11 }}>
+              v{APP_VERSION}
+            </Text>
+            {COLOR_THEMES.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                className={`theme-swatch${colorTheme === t.id ? ' active' : ''}`}
+                style={{
+                  background: t.swatch,
+                  boxShadow:
+                    colorTheme === t.id
+                      ? `0 0 0 2px #fff, 0 0 0 4px ${t.swatch}`
+                      : '0 0 0 1px rgba(0,0,0,0.12)',
+                }}
+                title={t.name}
+                aria-label={t.name}
+                onClick={() => setColorTheme(t.id)}
+              />
+            ))}
+          </span>
         </Space>
       </header>
 
