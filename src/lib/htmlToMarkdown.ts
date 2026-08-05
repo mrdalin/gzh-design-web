@@ -22,21 +22,21 @@ function convertNode(node: Node, listDepth = 0): string {
 
     switch (tag) {
       case 'p':
-        return '\n\n' + children.map((c) => convertInline(c)).join('').trim() + '\n\n';
+        return '\n\n' + children.map((c) => convertInline(c)).join('').trim();
       case 'br':
         return '\n';
       case 'h1':
-        return '\n\n# ' + children.map((c) => convertInline(c)).join('').trim() + '\n\n';
+        return '\n\n# ' + children.map((c) => convertInline(c)).join('').trim();
       case 'h2':
-        return '\n\n## ' + children.map((c) => convertInline(c)).join('').trim() + '\n\n';
+        return '\n\n## ' + children.map((c) => convertInline(c)).join('').trim();
       case 'h3':
-        return '\n\n### ' + children.map((c) => convertInline(c)).join('').trim() + '\n\n';
+        return '\n\n### ' + children.map((c) => convertInline(c)).join('').trim();
       case 'h4':
-        return '\n\n#### ' + children.map((c) => convertInline(c)).join('').trim() + '\n\n';
+        return '\n\n#### ' + children.map((c) => convertInline(c)).join('').trim();
       case 'h5':
-        return '\n\n##### ' + children.map((c) => convertInline(c)).join('').trim() + '\n\n';
+        return '\n\n##### ' + children.map((c) => convertInline(c)).join('').trim();
       case 'h6':
-        return '\n\n###### ' + children.map((c) => convertInline(c)).join('').trim() + '\n\n';
+        return '\n\n###### ' + children.map((c) => convertInline(c)).join('').trim();
       case 'b':
       case 'strong':
         return '**' + children.map((c) => convertInline(c)).join('').trim() + '**';
@@ -63,14 +63,14 @@ function convertNode(node: Node, listDepth = 0): string {
         const items = children
           .filter((c) => (c as HTMLElement).tagName?.toLowerCase() === 'li')
           .map((li) => '- ' + convertListItem(li as HTMLElement, listDepth + 1));
-        return '\n\n' + items.join('\n') + '\n\n';
+        return '\n\n' + items.join('\n');
       }
       case 'ol': {
         let idx = 1;
         const items = children
           .filter((c) => (c as HTMLElement).tagName?.toLowerCase() === 'li')
           .map((li) => `${idx++}. ` + convertListItem(li as HTMLElement, listDepth + 1));
-        return '\n\n' + items.join('\n') + '\n\n';
+        return '\n\n' + items.join('\n');
       }
       case 'blockquote':
         return (
@@ -82,7 +82,7 @@ function convertNode(node: Node, listDepth = 0): string {
             .filter((l) => l.trim() !== '')
             .map((l) => '> ' + l)
             .join('\n') +
-          '\n\n'
+          '\n'
         );
       case 'div':
       case 'span':
