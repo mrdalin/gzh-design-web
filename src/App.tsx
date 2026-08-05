@@ -128,6 +128,8 @@ export default function App() {
   const syncingFromRich = useRef(false);
   // 上传 Word 防重入：处理中再次触发直接忽略，避免并发解析相互干扰。
   const docxBusyRef = useRef(false);
+  // Word 图片正在后台上传 imgbb：true 时禁用「生成排版」按钮（内容尚未就绪）。
+  const [wordImageUploading, setWordImageUploading] = useState(false);
 
   // 三栏联动滚动的容器 ref（富文本区 / Markdown 区 / 预览区）
   const richScrollRef = useRef<HTMLDivElement | null>(null);
@@ -333,6 +335,7 @@ export default function App() {
           }
         });
         docxBusyRef.current = false;
+        setWordImageUploading(false);
       };
 
       const maybeFinish = () => {
@@ -375,12 +378,26 @@ export default function App() {
       if (!md) {
         Toast.close(tId);
         docxBusyRef.current = false;
+        setWordImageUploading(false);
         Toast.warning('Word 文件内容为空');
         return;
       }
-      // 同时更新 Markdown 区和富文本区（此时图片为本地预览）
+
+      // Markdown 区用占位符替代巨大的 base64 dataURL（富文本区仍保留 dataURL 预览图）。
+      // 占位格式：![图片 N（上传中…）](#pending) —— 短小清晰，finish() 时替换为真实 URL。
+      let imgIdx = 0;
+      const cleanMd = md.replace(/!\[([^\]]*)\]\((data:image\/[^)]+)\)/g, (_match, alt: string) => {
+        imgIdx++;
+        return `![图片 ${imgIdx}（上传中…）](${alt ? alt : '#pending'})`;
+      });
+
+      // 有图片且需要上传时，标记「图片上传中」以禁用生成排版按钮
+      const hasPendingImages = hasKey && totalImages > 0;
+      if (hasPendingImages) setWordImageUploading(true);
+
+      // 同时更新 Markdown 区（占位符版）和富文本区（dataURL 预览版）
       syncingFromRich.current = true;
-      setArticle(md);
+      setArticle(cleanMd);
       setRichHtml(markdownToHtml(md));
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
@@ -403,6 +420,7 @@ export default function App() {
     } catch (e: any) {
       Toast.close(tId);
       docxBusyRef.current = false;
+      setWordImageUploading(false);
       console.error('[Word 解析失败]', e);
       Toast.error('Word 文件解析失败，请确认是有效的 .docx 文件');
     }
@@ -856,11 +874,12 @@ export default function App() {
               size="large"
               block
               onClick={generate}
-              loading={loading}
-              icon={<IconSend />}
+              loading={loading || wordImageUploading}
+              disabled={wordImageUploading}
+              icon={wordImageUploading ? undefined : <IconSend />}
               style={{ marginTop: 12, flexShrink: 0 }}
             >
-              生成排版 →
+              {wordImageUploading ? '图片上传中，请稍候…' : '生成排版 →'}
             </Button>
           </div>
         </main>
