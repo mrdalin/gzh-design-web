@@ -39,8 +39,17 @@ interface Props {
   scrollRef?: React.Ref<HTMLDivElement>;
 }
 
-function sanitizeFileName(s: string): string {
-  return (s || '未命名排版').replace(/[\\/:*?"<>|]/g, '_').slice(0, 60);
+function safeText(s: string): string {
+  return (s || '').replace(/[\\/:*?"<>|]/g, '_').trim();
+}
+
+// 导出文件名：固定前缀「排版」+ 标题前 3 字 + 精确到秒的时间戳，短且不重样
+function makeExportBase(title: string): string {
+  const head = safeText(title).slice(0, 3) || '未命名';
+  const d = new Date();
+  const p = (n: number) => String(n).padStart(2, '0');
+  const ts = `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+  return `排版_${head}_${ts}`;
 }
 
 function downloadBlob(blob: Blob, fileName: string) {
@@ -139,7 +148,7 @@ export default function PreviewPanel({
       ['<!DOCTYPE html><html><head><meta charset="utf-8"><title>', title, '</title></head><body>', html, '</body></html>'],
       { type: 'text/html;charset=utf-8' }
     );
-    downloadBlob(blob, `${sanitizeFileName(title)}.html`);
+    downloadBlob(blob, `${makeExportBase(title)}.html`);
     Toast.success('已导出 HTML 文件');
   }
 
@@ -151,7 +160,7 @@ export default function PreviewPanel({
         pixelRatio: 2,
         backgroundColor: '#ffffff',
       });
-      downloadDataUrl(dataUrl, `${sanitizeFileName(title)}_长图.png`);
+      downloadDataUrl(dataUrl, `${makeExportBase(title)}_长图.png`);
       Toast.success('长图已生成');
       setShotVisible(false);
     } catch (e: any) {
@@ -174,7 +183,7 @@ export default function PreviewPanel({
       const totalHeight = canvas.height;
       const count = Math.max(1, Math.ceil(totalHeight / segHeight));
       const zip = new JSZip();
-      const baseName = sanitizeFileName(title);
+      const baseName = makeExportBase(title);
 
       for (let i = 0; i < count; i++) {
         const y = i * segHeight;
