@@ -8,15 +8,15 @@ body,
        优先级高于从 document :root 继承来的值，故必须在本文件的 :host 选择器里也覆盖才能透进 shadow 边界。
      - 同时覆盖 --semi-blue-5 通道变量，因为 Semi 的 primary 实际是 rgba(var(--semi-blue-5),1)。
      - 用 !important 强制压过 Semi 同名声明。只改这里即可整体回退。 */
-  --semi-color-primary: #07C160 !important;
-  --semi-color-primary-hover: #18C46A !important;
-  --semi-color-primary-active: #059B4E !important;
-  --semi-color-primary-disabled-bg: rgba(7, 193, 96, 0.30) !important;
+  --semi-color-primary: #069A4C !important;
+  --semi-color-primary-hover: #18A85C !important;
+  --semi-color-primary-active: #058A43 !important;
+  --semi-color-primary-disabled-bg: rgba(6, 154, 76, 0.30) !important;
   --semi-color-primary-disabled-text: rgba(255, 255, 255, 0.60) !important;
-  --semi-color-primary-light-default: rgba(7, 193, 96, 0.10) !important;
-  --semi-color-primary-light-hover: rgba(7, 193, 96, 0.15) !important;
-  --semi-color-primary-light-active: rgba(7, 193, 96, 0.20) !important;
-  --semi-blue-5: 7, 193, 96 !important;
+  --semi-color-primary-light-default: rgba(6, 154, 76, 0.10) !important;
+  --semi-color-primary-light-hover: rgba(6, 154, 76, 0.15) !important;
+  --semi-color-primary-light-active: rgba(6, 154, 76, 0.20) !important;
+  --semi-blue-5: 6, 154, 76 !important;
 }
 
 * {
@@ -185,7 +185,7 @@ body {
   font-size: 16px;
   font-weight: 700;
   letter-spacing: 1px;
-  color: #07C160;
+  color: #069A4C;
   white-space: nowrap;
   user-select: none;
   cursor: default;

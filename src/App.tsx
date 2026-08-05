@@ -567,8 +567,8 @@ export default function App() {
             <rect x="7" y="19" width="16" height="2.2" rx="1.1" fill="white" opacity="0.75" />
             <defs>
               <linearGradient id="logoGrad" x1="0" y1="0" x2="32" y2="32">
-                <stop offset="0%" stopColor="#07C160" />
-                <stop offset="100%" stopColor="#069A4C" />
+                <stop offset="0%" stopColor="#16A85E" />
+                <stop offset="100%" stopColor="#058A43" />
               </linearGradient>
             </defs>
           </svg>
