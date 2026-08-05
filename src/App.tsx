@@ -551,7 +551,7 @@ export default function App() {
     saveLastModelId(id);
     // 选中了未配置（缺 API Key）的模型：提示并打开模型管理，引导填写
     if (m && !isModelConfigured(m)) {
-      Toast.info('该模型尚未配置 API Key，请先在「模型 API」中填写');
+      Toast.info('该模型尚未配置 API Key，请先点击 编辑 填写后使用');
       setModelVisible(true);
     }
   }
