@@ -46,8 +46,9 @@ export default function ThemeBar({
   return (
     <div className="theme-bar">
       <div className="theme-bar-hint" title="鼠标悬停主题卡片上可预览排版效果">
-        <span className="hint-dot" />
-        选择主题
+        选择
+        <br />
+        主题
       </div>
       <div className="theme-bar-scroll">
         <Space spacing={12} align="center">
