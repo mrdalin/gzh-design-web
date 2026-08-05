@@ -126,6 +126,8 @@ export default function App() {
   // 防止「富文本 → Markdown → 富文本」回环：当变更源自富文本编辑器时，临时屏蔽
   // Markdown 反向同步，避免来回改写导致光标跳动或内容被重写。
   const syncingFromRich = useRef(false);
+  // 上传 Word 防重入：处理中再次触发直接忽略，避免并发解析相互干扰。
+  const docxBusyRef = useRef(false);
 
   // 三栏联动滚动的容器 ref（富文本区 / Markdown 区 / 预览区）
   const richScrollRef = useRef<HTMLDivElement | null>(null);
@@ -258,7 +260,9 @@ export default function App() {
   }
 
   // Word(.docx) 上传解析：用 mammoth 客户端提取文本与图片。
-  // 图片：若已配置 imgbb Key 则自动上传并返回真实 URL；否则留占位图并提示用户先配置。
+  // 方案 A+D：文字立即渲染，图片先以本地 dataURL 预览、后台并发上传 imgbb，
+  // 上传完成后把 DOM 里的预览图替换为真实 URL，最后统一回写 Markdown 与富文本状态，
+  // 避免「文字被图片上传阻塞」导致的长时间白屏 / 误以为解析失败。
   async function handleDocxUpload(file: File) {
     const lower = file.name.toLowerCase();
     if (!lower.endsWith('.docx') && !lower.endsWith('.doc')) {
@@ -269,22 +273,96 @@ export default function App() {
       Toast.error('旧版 .doc 格式无法解析，请先将文件「另存为」.docx 后再上传');
       return;
     }
+    if (docxBusyRef.current) {
+      Toast.warning('正在解析上一个 Word 文件，请稍候');
+      return;
+    }
+    docxBusyRef.current = true;
+    const hasKey = !!imgbbKey?.trim();
+    // 解析中提示（不自动消失，待收尾时关闭）
+    const tId = Toast.info({
+      content: hasKey ? '正在解析 Word，文字优先显示，图片稍后自动上传…' : '正在解析 Word，图片需配置图床后重传…',
+      duration: 0,
+    });
     try {
       const arrayBuffer = await file.arrayBuffer();
-      const hasKey = !!imgbbKey?.trim();
+
+      // dataURL 预览 → 真实 URL（或失败占位）的映射；上传完成后再回填 DOM
+      const pending = new Map<string, string>();
+      let totalImages = 0;
+      let doneImages = 0;
       let imageFail = 0;
+      let md = '';
+      let finished = false;
+
+      // 把已上传完成的预览图替换为真实 URL（幂等，可反复调用）
+      const patchImages = () => {
+        const editor = document.querySelector('.rich-editor');
+        if (!editor) return;
+        editor.querySelectorAll('img').forEach((img) => {
+          const src = img.getAttribute('src') || '';
+          if (src.startsWith('data:image') && pending.has(src)) {
+            img.setAttribute('src', pending.get(src)!);
+          }
+        });
+      };
+
+      const finish = () => {
+        if (finished) return;
+        finished = true;
+        patchImages();
+        // 等一帧让 DOM 落地，再统一把真实 URL 回写进 React 状态（富文本 + Markdown）
+        requestAnimationFrame(() => {
+          const finalHtml = document.querySelector('.rich-editor')?.innerHTML || '';
+          syncingFromRich.current = true;
+          setRichHtml(finalHtml);
+          setArticle(htmlToMarkdown(finalHtml));
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              syncingFromRich.current = false;
+            });
+          });
+          Toast.close(tId);
+          Toast.success(
+            `Word 已解析为 Markdown（约 ${md.length} 字${totalImages ? `，${totalImages} 张图片` : ''}）`
+          );
+          if (imageFail > 0) {
+            Toast.warning(`有 ${imageFail} 张图片上传失败（已留占位），请检查 imgbb Key 或网络`);
+          } else if (!hasKey && totalImages > 0) {
+            Toast.info('本文含图片：因未配置 imgbb 图床，图片已留占位；到右上角「图片 API」填写 Key 后重新上传 Word 即可自动上传图片');
+          }
+        });
+        docxBusyRef.current = false;
+      };
+
+      const maybeFinish = () => {
+        if (totalImages > 0 && doneImages >= totalImages) finish();
+      };
+
       const convertImage = mammoth.images.imgElement(async (image: any) => {
         const b64 = await image.read('base64');
         if (!hasKey) return { src: PLACEHOLDER_IMG };
-        try {
-          const res = await uploadImageB64(b64, imgbbKey, imgbbExpiry);
-          return { src: res.url };
-        } catch (e) {
-          imageFail++;
-          console.warn('[Word 图片上传失败]', e);
-          return { src: PLACEHOLDER_IMG };
-        }
+        const ct = image.contentType || 'image/png';
+        const preview = `data:${ct};base64,${b64}`;
+        totalImages++;
+        // 后台并发上传，不阻塞文字解析；完成后回填真实 URL
+        uploadImageB64(b64, imgbbKey, imgbbExpiry)
+          .then((res: any) => {
+            pending.set(preview, res.url);
+          })
+          .catch((e: any) => {
+            imageFail++;
+            console.warn('[Word 图片上传失败]', e);
+            pending.set(preview, PLACEHOLDER_IMG);
+          })
+          .finally(() => {
+            doneImages++;
+            patchImages();
+            maybeFinish();
+          });
+        return { src: preview };
       });
+
       const result = await mammoth.convertToMarkdown({ arrayBuffer }, {
         convertImage,
         styleMap: [
@@ -293,12 +371,14 @@ export default function App() {
           "b[style-name='Heading 3'] => h3:fresh",
         ],
       });
-      const md = result.value.trim();
+      md = result.value.trim();
       if (!md) {
+        Toast.close(tId);
+        docxBusyRef.current = false;
         Toast.warning('Word 文件内容为空');
         return;
       }
-      // 同时更新 Markdown 区和富文本区
+      // 同时更新 Markdown 区和富文本区（此时图片为本地预览）
       syncingFromRich.current = true;
       setArticle(md);
       setRichHtml(markdownToHtml(md));
@@ -307,16 +387,22 @@ export default function App() {
           syncingFromRich.current = false;
         });
       });
-      Toast.success(`Word 已解析为 Markdown（约 ${md.length} 字）`);
       if (result.messages.length > 0) {
         console.log('[Word 解析警告]', result.messages);
       }
-      if (hasKey && imageFail > 0) {
-        Toast.warning(`有 ${imageFail} 张图片上传失败（已留占位），请检查 imgbb Key 或网络`);
-      } else if (!hasKey) {
-        Toast.info('本文含图片：因未配置 imgbb 图床，图片已留占位；到右上角「图片 API」填写 Key 后重新上传 Word 即可自动上传图片');
-      }
+      // 等富文本 DOM 渲染后再补图；无图片或无需上传则直接收尾
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          patchImages();
+          if (totalImages === 0 || !hasKey) {
+            finish();
+          }
+          // 有 Key 且有图片：由上传完成的 maybeFinish 收尾
+        });
+      });
     } catch (e: any) {
+      Toast.close(tId);
+      docxBusyRef.current = false;
       console.error('[Word 解析失败]', e);
       Toast.error('Word 文件解析失败，请确认是有效的 .docx 文件');
     }
