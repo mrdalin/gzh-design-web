@@ -33,13 +33,18 @@ export default function ThemeBar({
   onOpenWizard,
 }: Props) {
   const [hoveredTheme, setHoveredTheme] = useState<Theme | null>(null);
+  const [hoverRect, setHoverRect] = useState<DOMRect | null>(null);
+
+  function handleCardEnter(t: Theme, e: React.MouseEvent) {
+    setHoveredTheme(t);
+    setHoverRect(e.currentTarget.getBoundingClientRect());
+  }
 
   return (
     <div className="theme-bar">
-      <div className="theme-bar-hint">
+      <div className="theme-bar-hint" title="鼠标悬停主题卡片上可预览排版效果">
         <span className="hint-dot" />
         选择主题
-        <span className="hint-sub">· 悬停卡片可预览效果</span>
       </div>
       <div className="theme-bar-scroll">
         <Space spacing={12} align="center">
@@ -48,9 +53,8 @@ export default function ThemeBar({
               key={t.id}
               className={'theme-bar-card' + (value === t.id && !customActive ? ' active' : '')}
               onClick={() => onSelect(t.id)}
-              onMouseEnter={() => setHoveredTheme(t)}
-              onMouseLeave={() => setHoveredTheme(null)}
-              style={{ position: 'relative' }}
+              onMouseEnter={(e) => handleCardEnter(t, e)}
+              onMouseLeave={() => { setHoveredTheme(null); setHoverRect(null); }}
             >
               <div className="theme-bar-dot" style={{ background: t.mainColor }} />
               <div className="theme-bar-info">
@@ -62,19 +66,6 @@ export default function ThemeBar({
                 </div>
                 <div className="theme-bar-scenario">{t.scenario}</div>
               </div>
-
-              {/* hover 预览浮层 */}
-              {hoveredTheme?.id === t.id && THEME_PREVIEW_MAP[t.name] && (
-                <div className="theme-preview-popover">
-                  <div className="theme-preview-title">{t.name}</div>
-                  <div className="theme-preview-desc">{t.scenario}</div>
-                  <img
-                    src={THEME_PREVIEW_MAP[t.name]}
-                    alt={`${t.name} 预览`}
-                    className="theme-preview-img"
-                  />
-                </div>
-              )}
             </div>
           ))}
 
@@ -98,6 +89,27 @@ export default function ThemeBar({
           </Button>
         </Space>
       </div>
+
+      {/* 预览浮层：渲染在 .theme-bar 层级，用 fixed 定位脱离滚动容器裁剪 */}
+      {hoveredTheme && THEME_PREVIEW_MAP[hoveredTheme.name] && hoverRect && (
+        <div
+          className="theme-preview-popover"
+          style={{
+            position: 'fixed',
+            top: hoverRect.bottom + 8,
+            left: hoverRect.left + hoverRect.width / 2 - 140, /* width=280, 居中 */
+            zIndex: 9999,
+          }}
+        >
+          <div className="theme-preview-title">{hoveredTheme.name}</div>
+          <div className="theme-preview-desc">{hoveredTheme.scenario}</div>
+          <img
+            src={THEME_PREVIEW_MAP[hoveredTheme.name]}
+            alt={`${hoveredTheme.name} 预览`}
+            className="theme-preview-img"
+          />
+        </div>
+      )}
     </div>
   );
 }

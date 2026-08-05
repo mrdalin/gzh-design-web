@@ -168,6 +168,7 @@ body {
   color: var(--semi-color-text-1);
   white-space: nowrap;
   user-select: none;
+  cursor: default;
 }
 
 .theme-bar-hint .hint-dot {
@@ -176,12 +177,6 @@ body {
   border-radius: 50%;
   background: var(--semi-color-primary);
   flex-shrink: 0;
-}
-
-.theme-bar-hint .hint-sub {
-  font-size: 12px;
-  font-weight: 400;
-  color: var(--semi-color-text-2);
 }
 
 .theme-bar-scroll {
@@ -503,13 +498,8 @@ body {
   flex-shrink: 0;
 }
 
-/* ─── 主题卡片 hover 预览浮层 ───────────────────────── */
+/* ─── 主题卡片 hover 预览浮层（fixed 定位，由 JS 计算位置） ───────────── */
 .theme-preview-popover {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 100;
   width: 280px;
   padding: 12px;
   background: var(--semi-color-bg-1);
@@ -519,8 +509,8 @@ body {
   animation: theme-popover-in 0.2s ease;
 }
 @keyframes theme-popover-in {
-  from { opacity: 0; transform: translateX(-50%) translateY(-4px); }
-  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 .theme-preview-title {
   font-weight: 600;
