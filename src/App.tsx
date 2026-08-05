@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import {
   Button,
   Typography,
@@ -87,6 +87,13 @@ export default function App() {
 
   const [imgbbKey, setImgbbKey] = useState('');
   const [imgbbExpiry, setImgbbExpiry] = useState(0);
+
+  // 当前选中主题名（用于导出文件名区分不同主题）
+  const currentThemeName = useMemo(() => {
+    if (!selectedThemeId) return '默认';
+    if (selectedThemeId === 'custom') return customThemeName || '自定义';
+    return themes.find((t) => t.id === selectedThemeId)?.name || '默认';
+  }, [selectedThemeId, customThemeName, themes]);
 
   const [result, setResult] = useState<LayoutResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -682,6 +689,7 @@ export default function App() {
       <PreviewPanel
         html={result?.html || ''}
         title={result?.title || ''}
+        themeName={currentThemeName}
         loading={loading}
         validation={result?.validation || null}
         onRegenerate={generate}
