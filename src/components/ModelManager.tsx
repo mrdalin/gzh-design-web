@@ -114,7 +114,7 @@ export default function ModelManager({
       }
     >
       <Paragraph type="secondary" style={{ fontSize: 13 }}>
-        所有 API Key 仅保存在你本机浏览器，调用时经本站 Worker 代理转发，不会上传到任何服务器。
+        所有 API Key 仅保存在你本机浏览器，调用时经直连各模型服务商，不会上传到本站服务器。不放心的直接点击右上角X，关闭页面即可。
       </Paragraph>
 
       <Text strong>已配置模型</Text>
@@ -150,7 +150,7 @@ export default function ModelManager({
                     rel="noopener noreferrer"
                     style={{ fontSize: 12, color: 'var(--semi-color-primary)', marginLeft: 8 }}
                   >
-                    开通 API
+                    {m.id === 'agnes-25-flash' ? '免费开通 API' : '开通 API'}
                   </a>
                 )}
               </span>
@@ -169,9 +169,6 @@ export default function ModelManager({
 
       <Divider />
       <Text strong>{editingId ? '编辑模型' : '添加自定义模型'}</Text>
-      <div className="field-order-hint" style={{ marginTop: 8 }}>
-        字段顺序：显示名称（可选） → API 地址 → API KEY → 模型名称
-      </div>
 
       <Input
         placeholder="显示名称（可选），如「我的 DeepSeek」"

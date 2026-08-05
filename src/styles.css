@@ -400,12 +400,6 @@ body {
   margin-top: 4px;
 }
 
-.field-order-hint {
-  color: var(--semi-color-text-2);
-  font-size: 12px;
-  margin-bottom: 8px;
-}
-
 /* ─── 排版历史：右滑抽屉（本项目 Semi 2.101.1 无 Drawer 组件，自定义实现）─── */
 .drawer-mask {
   position: fixed;

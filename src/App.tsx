@@ -7,6 +7,7 @@ import {
   Space,
   Input,
   Select,
+  Badge,
 } from '@douyinfe/semi-ui';
 import {
   IconCode,
@@ -625,9 +626,11 @@ export default function App() {
             ]}
             placeholder="选择模型"
           />
-          <Button theme="borderless" icon={<IconHistory />} onClick={() => setHistoryVisible(true)}>
-            排版历史
-          </Button>
+          <Badge count={history.length} overflowCount={99} type="primary">
+            <Button theme="borderless" icon={<IconHistory />} onClick={() => setHistoryVisible(true)}>
+              排版历史
+            </Button>
+          </Badge>
           {REPO_URL && (
             <Button theme="borderless" icon={<IconCode />} onClick={() => window.open(REPO_URL, '_blank')}>
               源码
