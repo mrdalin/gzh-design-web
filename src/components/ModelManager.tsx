@@ -218,9 +218,15 @@ export default function ModelManager({
         {editingId && (
           <Button onClick={() => { setDraft(emptyCustom()); setEditingId(null); }}>取消</Button>
         )}
-        <Button theme="light" icon={<IconRefresh />} onClick={resetPresets}>
-          恢复默认模型
-        </Button>
+        <Popconfirm
+          title="确定要恢复默认模型吗？"
+          content="这将清空所有已配置的 API Key 和自定义模型，恢复为初始预设列表。"
+          onConfirm={resetPresets}
+        >
+          <Button theme="light" icon={<IconRefresh />}>
+            恢复默认模型
+          </Button>
+        </Popconfirm>
       </Space>
     </Modal>
   );
