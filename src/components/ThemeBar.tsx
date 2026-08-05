@@ -15,6 +15,9 @@ const THEME_PREVIEW_MAP: Record<string, string> = {
   'olive-journal': 'https://i.ibb.co/XkYxYmYH/ganlan.jpg',
 };
 
+// 竖长图主题（原始比例为竖向，弹窗需按完整比例显示，不能裁切）
+const TALL_THEMES = new Set(['moyu-ticket', 'graphite-minimal', 'zen-whitespace']);
+
 interface Props {
   themes: Theme[];
   value: string;
@@ -91,25 +94,30 @@ export default function ThemeBar({
       </div>
 
       {/* 预览浮层：渲染在 .theme-bar 层级，用 fixed 定位脱离滚动容器裁剪 */}
-      {hoveredTheme && THEME_PREVIEW_MAP[hoveredTheme.id] && hoverRect && (
-        <div
-          className="theme-preview-popover"
-          style={{
-            position: 'fixed',
-            top: hoverRect.bottom + 8,
-            left: hoverRect.left + hoverRect.width / 2 - 140, /* width=280, 居中 */
-            zIndex: 9999,
-          }}
-        >
-          <div className="theme-preview-title">{hoveredTheme.name}</div>
-          <div className="theme-preview-desc">{hoveredTheme.scenario}</div>
-          <img
-            src={THEME_PREVIEW_MAP[hoveredTheme.id]}
-            alt={`${hoveredTheme.name} 预览`}
-            className="theme-preview-img"
-          />
-        </div>
-      )}
+      {hoveredTheme && THEME_PREVIEW_MAP[hoveredTheme.id] && hoverRect && (() => {
+        const isTall = TALL_THEMES.has(hoveredTheme.id);
+        const popWidth = isTall ? 210 : 300;
+        return (
+          <div
+            className="theme-preview-popover"
+            style={{
+              position: 'fixed',
+              top: hoverRect.bottom + 8,
+              left: hoverRect.left + hoverRect.width / 2 - popWidth / 2,
+              width: popWidth,
+              zIndex: 9999,
+            }}
+          >
+            <div className="theme-preview-title">{hoveredTheme.name}</div>
+            <div className="theme-preview-desc">{hoveredTheme.scenario}</div>
+            <img
+              src={THEME_PREVIEW_MAP[hoveredTheme.id]}
+              alt={`${hoveredTheme.name} 预览`}
+              className={'theme-preview-img' + (isTall ? ' tall' : ' square')}
+            />
+          </div>
+        );
+      })()}
     </div>
   );
 }

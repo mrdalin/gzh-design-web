@@ -523,9 +523,15 @@ body {
   margin-bottom: 8px;
 }
 .theme-preview-img {
+  display: block;
   width: 100%;
-  height: 160px;
-  object-fit: cover;
+  height: auto;
   border-radius: 6px;
   border: 1px solid var(--semi-color-border);
+  background: #f3f4f6;
+}
+/* 竖长图：按原始比例完整显示，限制最大高度，避免弹窗过高 */
+.theme-preview-img.tall {
+  max-height: 360px;
+  object-fit: contain;
 }
