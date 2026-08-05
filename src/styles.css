@@ -400,6 +400,15 @@ body {
   margin-top: 4px;
 }
 
+/* 排版历史角标：数字字号调小，避免抢眼 */
+.semi-badge-count {
+  font-size: 10px !important;
+  line-height: 14px !important;
+  height: 14px !important;
+  min-width: 14px !important;
+  padding: 0 4px !important;
+}
+
 /* ─── 排版历史：右滑抽屉（本项目 Semi 2.101.1 无 Drawer 组件，自定义实现）─── */
 .drawer-mask {
   position: fixed;

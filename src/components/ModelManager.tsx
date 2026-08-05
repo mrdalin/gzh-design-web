@@ -114,7 +114,7 @@ export default function ModelManager({
       }
     >
       <Paragraph type="secondary" style={{ fontSize: 13 }}>
-        所有 API Key 仅保存在你本机浏览器，调用时经直连各模型服务商，不会上传到本站服务器。不放心的直接点击右上角X，关闭页面即可。
+        所有 API Key 仅保存在你本机浏览器，调用时直连各模型服务商，不会上传到本站服务器。不放心的直接点击右上角X，关闭页面即可。
       </Paragraph>
 
       <Text strong>已配置模型</Text>
