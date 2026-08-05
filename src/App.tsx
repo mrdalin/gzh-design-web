@@ -585,6 +585,9 @@ export default function App() {
             </defs>
           </svg>
           微信公众号 AI 排版
+          <Text type="tertiary" size="small" style={{ opacity: 0.4, userSelect: 'none', fontWeight: 400, fontSize: 11, marginLeft: 6 }}>
+            v{APP_VERSION}
+          </Text>
         </div>
         <Space>
           <Select
@@ -617,28 +620,6 @@ export default function App() {
           <Button theme="borderless" icon={<IconSetting />} onClick={() => setModelVisible(true)}>
             模型 API
           </Button>
-          <span className="theme-switch" title="切换主题色">
-            <Text type="tertiary" size="small" style={{ opacity: 0.4, userSelect: 'none', fontWeight: 400, fontSize: 11 }}>
-              v{APP_VERSION}
-            </Text>
-            {COLOR_THEMES.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                className={`theme-swatch${colorTheme === t.id ? ' active' : ''}`}
-                style={{
-                  background: t.swatch,
-                  boxShadow:
-                    colorTheme === t.id
-                      ? `0 0 0 2px #fff, 0 0 0 4px ${t.swatch}`
-                      : '0 0 0 1px rgba(0,0,0,0.12)',
-                }}
-                title={t.name}
-                aria-label={t.name}
-                onClick={() => setColorTheme(t.id)}
-              />
-            ))}
-          </span>
         </Space>
       </header>
 
@@ -649,6 +630,8 @@ export default function App() {
         customName={customThemeName}
         onSelect={handleThemeSelect}
         onOpenWizard={() => setWizardVisible(true)}
+        colorTheme={colorTheme}
+        onColorThemeChange={setColorTheme}
       />
 
       <div className="app-shell app-shell-proto">
