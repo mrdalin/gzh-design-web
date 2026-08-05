@@ -130,15 +130,12 @@ body {
   gap: 8px;
 }
 
-/* 选择主题行最右的主题色切换：3 个横排色块，居右显示 */
+/* 顶部 header 内的主题色切换：3 个横排色块，放在模型下拉前 */
 .theme-color-switches {
-  flex-shrink: 0;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  margin-left: auto;
-  padding-left: 14px;
-  border-left: 1px solid var(--semi-color-border);
+  gap: 6px;
+  flex-shrink: 0;
 }
 .theme-swatch {
   width: 16px;

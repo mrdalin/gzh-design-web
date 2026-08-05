@@ -590,6 +590,25 @@ export default function App() {
           </Text>
         </div>
         <Space>
+          <span className="theme-color-switches" title="切换界面主题色">
+            {COLOR_THEMES.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                className={`theme-swatch${colorTheme === t.id ? ' active' : ''}`}
+                style={{
+                  background: t.swatch,
+                  boxShadow:
+                    colorTheme === t.id
+                      ? `0 0 0 2px #fff, 0 0 0 4px ${t.swatch}`
+                      : '0 0 0 1px rgba(0,0,0,0.12)',
+                }}
+                title={t.name}
+                aria-label={t.name}
+                onClick={() => setColorTheme(t.id)}
+              />
+            ))}
+          </span>
           <Select
             size="small"
             style={{ width: 190 }}
@@ -630,8 +649,6 @@ export default function App() {
         customName={customThemeName}
         onSelect={handleThemeSelect}
         onOpenWizard={() => setWizardVisible(true)}
-        colorTheme={colorTheme}
-        onColorThemeChange={setColorTheme}
       />
 
       <div className="app-shell app-shell-proto">

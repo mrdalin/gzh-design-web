@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Button, Space, Tag, Typography } from '@douyinfe/semi-ui';
 import { IconPlus } from '@douyinfe/semi-icons';
 import type { Theme } from '../types';
-import { COLOR_THEMES } from '../colorThemes';
 
 const { Text } = Typography;
 
@@ -26,8 +25,6 @@ interface Props {
   customName: string;
   onSelect: (id: string) => void;
   onOpenWizard: () => void;
-  colorTheme: string;
-  onColorThemeChange: (id: string) => void;
 }
 
 export default function ThemeBar({
@@ -37,8 +34,6 @@ export default function ThemeBar({
   customName,
   onSelect,
   onOpenWizard,
-  colorTheme,
-  onColorThemeChange,
 }: Props) {
   const [hoveredTheme, setHoveredTheme] = useState<Theme | null>(null);
   const [hoverRect, setHoverRect] = useState<DOMRect | null>(null);
@@ -97,27 +92,6 @@ export default function ThemeBar({
             自定义主题
           </Button>
         </Space>
-
-        {/* 界面主题色切换：3 个横排色块，居右显示 */}
-        <span className="theme-color-switches" title="切换界面主题色">
-          {COLOR_THEMES.map((t) => (
-            <button
-              key={t.id}
-              type="button"
-              className={`theme-swatch${colorTheme === t.id ? ' active' : ''}`}
-              style={{
-                background: t.swatch,
-                boxShadow:
-                  colorTheme === t.id
-                    ? `0 0 0 2px #fff, 0 0 0 4px ${t.swatch}`
-                    : '0 0 0 1px rgba(0,0,0,0.12)',
-              }}
-              title={t.name}
-              aria-label={t.name}
-              onClick={() => onColorThemeChange(t.id)}
-            />
-          ))}
-        </span>
       </div>
 
       {/* 预览浮层：渲染在 .theme-bar 层级，用 fixed 定位脱离滚动容器裁剪 */}
