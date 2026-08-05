@@ -158,6 +158,32 @@ body {
   background: var(--semi-color-bg-1);
 }
 
+.theme-bar-hint {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--semi-color-text-1);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.theme-bar-hint .hint-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--semi-color-primary);
+  flex-shrink: 0;
+}
+
+.theme-bar-hint .hint-sub {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--semi-color-text-2);
+}
+
 .theme-bar-scroll {
   flex: 1;
   min-width: 0;

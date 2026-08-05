@@ -36,6 +36,11 @@ export default function ThemeBar({
 
   return (
     <div className="theme-bar">
+      <div className="theme-bar-hint">
+        <span className="hint-dot" />
+        选择主题
+        <span className="hint-sub">· 悬停卡片可预览效果</span>
+      </div>
       <div className="theme-bar-scroll">
         <Space spacing={12} align="center">
           {themes.map((t) => (
