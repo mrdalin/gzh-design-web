@@ -80,6 +80,11 @@ export default function ModelManager({
     }
     onChange(nextModels);
     saveModels(nextModels);
+    // 若当前没有可用的（已配置）模型，保存后自动设为「使用中」，省去手动选择
+    const current = models.find((m) => m.id === selectedId);
+    if (!current || !isModelConfigured(current)) {
+      onSelect(editingId || next.id);
+    }
     setDraft(emptyCustom());
     setEditingId(null);
     Toast.success('已保存模型');
