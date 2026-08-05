@@ -10,7 +10,7 @@ import {
   Tag,
   Popconfirm,
 } from '@douyinfe/semi-ui';
-import { IconPlus, IconDelete, IconRefresh } from '@douyinfe/semi-icons';
+import { IconPlus, IconDelete, IconRefresh, IconTick } from '@douyinfe/semi-icons';
 import type { StoredModel } from '../types';
 import { loadModels, saveModels, DEFAULT_MODELS } from '../lib/storage';
 import { ModelAvatar, isModelConfigured } from '../modelIcons';
@@ -65,7 +65,7 @@ export default function ModelManager({
     setDraft((d) => ({ ...d, [field]: v }));
   }
 
-  function saveDraft() {
+  function saveDraft(useAfter = false) {
     if (!draft.baseUrl.trim() || !draft.apiKey.trim() || !draft.model.trim()) {
       Toast.warning('请填写完整的 API 地址、API KEY、模型名称');
       return;
@@ -80,9 +80,10 @@ export default function ModelManager({
     }
     onChange(nextModels);
     saveModels(nextModels);
-    // 若当前没有可用的（已配置）模型，保存后自动设为「使用中」，省去手动选择
+    // 若「保存并使用」或当前没有可用的（已配置）模型，则保存后自动设为「使用中」
     const current = models.find((m) => m.id === selectedId);
-    if (!current || !isModelConfigured(current)) {
+    const shouldSelect = useAfter || !current || !isModelConfigured(current);
+    if (shouldSelect) {
       onSelect(editingId || next.id);
     }
     setDraft(emptyCustom());
@@ -212,8 +213,11 @@ export default function ModelManager({
       </div>
 
       <Space>
-        <Button theme="solid" icon={editingId ? undefined : <IconPlus />} onClick={saveDraft}>
+        <Button theme="solid" icon={editingId ? undefined : <IconPlus />} onClick={() => saveDraft(false)}>
           {editingId ? '保存修改' : '添加模型'}
+        </Button>
+        <Button theme="light" icon={<IconTick />} onClick={() => saveDraft(true)}>
+          保存并使用
         </Button>
         {editingId && (
           <Button onClick={() => { setDraft(emptyCustom()); setEditingId(null); }}>取消</Button>
