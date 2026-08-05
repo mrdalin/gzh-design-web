@@ -31,9 +31,17 @@ async function onRequestPostHandler({ request }: { request: Request }) {
       method: 'POST',
       body: fd,
     });
+
+    // imgbb 服务异常时可能返回 HTML（如 503 维护页），直接 resp.json() 会抛解析错误
+    const ct = (resp.headers.get('content-type') || '').toLowerCase();
+    if (!ct.includes('application/json')) {
+      const bodyText = (await resp.text()).slice(0, 200);
+      return json({ error: `imgbb 服务异常（HTTP ${resp.status}，非 JSON 响应）：${bodyText.replace(/\s+/g, ' ')}` }, 502);
+    }
+
     const data: any = await resp.json();
     if (!data?.success) {
-      return json({ error: 'imgbb 上传失败：' + JSON.stringify(data?.error || '') }, 502);
+      return json({ error: 'imgbb 上传失败：' + JSON.stringify(data?.error || `HTTP ${resp.status}`) }, 502);
     }
     return json({ url: data.data.url, deleteUrl: data.data.delete_url, thumb: data.data.thumb?.url });
   } catch (e: any) {

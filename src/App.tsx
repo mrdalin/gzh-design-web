@@ -307,6 +307,8 @@ export default function App() {
       let imageFail = 0;
       let md = '';
       let finished = false;
+      // 记录第一张图片的上报失败原因，用于 Toast 提示用户排查（Key 无效 / 网络异常 / 服务端错误等）
+      let firstErrorReason = '';
 
       // 把已上传完成的预览图替换为真实 URL（幂等，可反复调用）
       const patchImages = () => {
@@ -342,7 +344,8 @@ export default function App() {
             `Word 已解析为 Markdown（约 ${md.length} 字${totalImages ? `，${totalImages} 张图片` : ''}）`
           );
           if (imageFail > 0) {
-            Toast.warning(`有 ${imageFail} 张图片上传失败（已留占位），请检查 imgbb Key 或网络`);
+            const detail = firstErrorReason ? `（${firstErrorReason.slice(0, 120)}）` : '';
+            Toast.warning(`有 ${imageFail} 张图片上传失败${detail}，已留占位；请检查「图片 API」配置或网络`);
           } else if (!hasKey && totalImages > 0) {
             Toast.info('本文含图片：因未配置 imgbb 图床，图片已留占位；到右上角「图片 API」填写 Key 后重新上传 Word 即可自动上传图片');
           }
@@ -368,6 +371,8 @@ export default function App() {
           })
           .catch((e: any) => {
             imageFail++;
+            const reason = e?.message || String(e);
+            if (!firstErrorReason) firstErrorReason = reason;
             console.warn('[Word 图片上传失败]', e);
             pending.set(preview, PLACEHOLDER_IMG);
           })
