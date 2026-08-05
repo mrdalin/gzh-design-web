@@ -50,7 +50,7 @@ function makeExportBase(title: string, themeName?: string): string {
   const theme = safeText(themeName).slice(0, 6) || '默认';
   const d = new Date();
   const p = (n: number) => String(n).padStart(2, '0');
-  const ts = `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+  const ts = `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}`;
   return `排版_${head}_${theme}_${ts}`;
 }
 

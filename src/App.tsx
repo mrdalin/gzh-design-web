@@ -560,7 +560,18 @@ export default function App() {
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <header className="app-header">
         <div className="app-logo">
-          <span style={{ color: 'var(--semi-color-primary)' }}>✍️</span>
+          <svg width="22" height="22" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ flexShrink: 0, borderRadius: 5 }}>
+            <rect width="32" height="32" rx="7" fill="url(#logoGrad)" />
+            <rect x="7" y="9" width="18" height="2.2" rx="1.1" fill="white" opacity="0.95" />
+            <rect x="7" y="14" width="14" height="2.2" rx="1.1" fill="white" opacity="0.85" />
+            <rect x="7" y="19" width="16" height="2.2" rx="1.1" fill="white" opacity="0.75" />
+            <defs>
+              <linearGradient id="logoGrad" x1="0" y1="0" x2="32" y2="32">
+                <stop offset="0%" stopColor="#07C160" />
+                <stop offset="100%" stopColor="#069A4C" />
+              </linearGradient>
+            </defs>
+          </svg>
           微信公众号 AI 排版
           <Text type="tertiary" size="small" style={{ opacity: 0.4, userSelect: 'none', fontWeight: 400, fontSize: 11 }}>
             v{APP_VERSION}
