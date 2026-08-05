@@ -5,14 +5,14 @@ import type { Theme } from '../types';
 
 const { Text } = Typography;
 
-// 主题预览图映射（按主题 name 匹配）
+// 主题预览图映射（按主题 id 匹配，id 由组件库文件名抽取，稳定不易错）
 const THEME_PREVIEW_MAP: Record<string, string> = {
-  '橄榄手机': 'https://i.ibb.co/XkYxYmYH/ganlan.jpg',
-  '红白': 'https://i.ibb.co/xtVq89Z0/hongbai.jpg',
-  '摸鱼绿': 'https://i.ibb.co/r2Z4Qn5Q/moyulv.jpg',
-  '摸鱼票据风': 'https://i.ibb.co/m1zD3PL/moyu-ticket.png',
-  '石墨极简': 'https://i.ibb.co/sJcFqbSr/shimo.png',
-  '留白禅意': 'https://i.ibb.co/3YQvHrBh/whitespace.png',
+  'moyu-green': 'https://i.ibb.co/r2Z4Qn5Q/moyulv.jpg',
+  'red-white': 'https://i.ibb.co/xtVq89Z0/hongbai.jpg',
+  'graphite-minimal': 'https://i.ibb.co/sJcFqbSr/shimo.png',
+  'zen-whitespace': 'https://i.ibb.co/3YQvHrBh/whitespace.png',
+  'moyu-ticket': 'https://i.ibb.co/m1zD3PL/moyu-ticket.png',
+  'olive-journal': 'https://i.ibb.co/XkYxYmYH/ganlan.jpg',
 };
 
 interface Props {
@@ -91,7 +91,7 @@ export default function ThemeBar({
       </div>
 
       {/* 预览浮层：渲染在 .theme-bar 层级，用 fixed 定位脱离滚动容器裁剪 */}
-      {hoveredTheme && THEME_PREVIEW_MAP[hoveredTheme.name] && hoverRect && (
+      {hoveredTheme && THEME_PREVIEW_MAP[hoveredTheme.id] && hoverRect && (
         <div
           className="theme-preview-popover"
           style={{
@@ -104,7 +104,7 @@ export default function ThemeBar({
           <div className="theme-preview-title">{hoveredTheme.name}</div>
           <div className="theme-preview-desc">{hoveredTheme.scenario}</div>
           <img
-            src={THEME_PREVIEW_MAP[hoveredTheme.name]}
+            src={THEME_PREVIEW_MAP[hoveredTheme.id]}
             alt={`${hoveredTheme.name} 预览`}
             className="theme-preview-img"
           />
