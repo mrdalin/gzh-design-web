@@ -130,7 +130,7 @@ body {
   gap: 8px;
 }
 
-/* 顶部 header 内的主题色切换：3 个横排色块，放在模型下拉前 */
+/* 顶部 header 内的主题色切换：4 个横排色块（红/蓝/绿/黑），放在模型下拉前 */
 .theme-color-switches {
   display: inline-flex;
   align-items: center;

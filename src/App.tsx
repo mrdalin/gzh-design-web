@@ -45,7 +45,7 @@ import {
 } from './lib/storage';
 import { copyRichText } from './lib/clipboard';
 import { REPO_URL, APP_VERSION } from './config';
-import { COLOR_THEMES, getStoredThemeId, applyTheme, THEME_STORAGE_KEY } from './colorThemes';
+import { COLOR_THEMES, getStoredThemeId, applyTheme, applyFavicon, THEME_STORAGE_KEY } from './colorThemes';
 
 import ThemeBar from './components/ThemeBar';
 import RichEditor from './components/RichEditor';
@@ -94,6 +94,7 @@ export default function App() {
   const [colorTheme, setColorTheme] = useState(getStoredThemeId());
   useEffect(() => {
     applyTheme(colorTheme);
+    applyFavicon(colorTheme);
     try {
       localStorage.setItem(THEME_STORAGE_KEY, colorTheme);
     } catch {
@@ -580,8 +581,8 @@ export default function App() {
             <rect x="7" y="19" width="16" height="2.2" rx="1.1" fill="white" opacity="0.75" />
             <defs>
               <linearGradient id="logoGrad" x1="0" y1="0" x2="32" y2="32">
-                <stop offset="0%" stopColor="#16A85E" />
-                <stop offset="100%" stopColor="#058A43" />
+                <stop offset="0%" style={{ stopColor: 'var(--gzh-accent, #069A4C)' }} />
+                <stop offset="100%" style={{ stopColor: 'var(--gzh-accent-dark, #058A43)' }} />
               </linearGradient>
             </defs>
           </svg>
