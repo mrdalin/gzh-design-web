@@ -259,6 +259,18 @@ body {
   margin-top: 3px;
 }
 
+/* ─── Header 操作按钮：与主题卡片风格统一（圆角边框）─── */
+.header-action-btn {
+  border: 1px solid var(--semi-color-border) !important;
+  border-radius: 8px !important;
+  background: var(--semi-color-bg-0) !important;
+  transition: all 0.15s ease !important;
+}
+.header-action-btn:hover {
+  border-color: var(--semi-color-primary) !important;
+  color: var(--semi-color-primary) !important;
+}
+
 .theme-bar-info {
   min-width: 0;
 }

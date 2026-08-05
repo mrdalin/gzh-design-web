@@ -618,8 +618,8 @@ export default function App() {
             optionList={[
               ...models.map((m) => ({
                 label: isModelConfigured(m)
-                  ? (m.displayName || m.model)
-                  : `${m.displayName || m.model}（未配置）`,
+                  ? m.model
+                  : `${m.model}（未配置）`,
                 value: m.id,
               })),
               { label: '➕ 添加自定义模型…', value: '__add_custom__' },
@@ -628,24 +628,24 @@ export default function App() {
           />
           {history.length > 0 ? (
             <Badge count={history.length} overflowCount={99} type="primary">
-              <Button theme="borderless" icon={<IconHistory />} onClick={() => setHistoryVisible(true)}>
+              <Button className="header-action-btn" icon={<IconHistory />} onClick={() => setHistoryVisible(true)}>
                 排版历史
               </Button>
             </Badge>
           ) : (
-            <Button theme="borderless" icon={<IconHistory />} onClick={() => setHistoryVisible(true)}>
+            <Button className="header-action-btn" icon={<IconHistory />} onClick={() => setHistoryVisible(true)}>
               排版历史
             </Button>
           )}
           {REPO_URL && (
-            <Button theme="borderless" icon={<IconCode />} onClick={() => window.open(REPO_URL, '_blank')}>
+            <Button className="header-action-btn" icon={<IconCode />} onClick={() => window.open(REPO_URL, '_blank')}>
               源码
             </Button>
           )}
-          <Button theme="borderless" icon={<IconImage />} onClick={() => setImgbbVisible(true)}>
+          <Button className="header-action-btn" icon={<IconImage />} onClick={() => setImgbbVisible(true)}>
             图片 API
           </Button>
-          <Button theme="borderless" icon={<IconSetting />} onClick={() => setModelVisible(true)}>
+          <Button className="header-action-btn" icon={<IconSetting />} onClick={() => setModelVisible(true)}>
             模型 API
           </Button>
         </Space>
