@@ -182,13 +182,15 @@ export default function ModelManager({
         onChange={(v) => updateField('baseUrl', v)}
         style={{ marginBottom: 10 }}
       />
-      <Input
-        placeholder="API KEY"
-        type="password"
-        value={draft.apiKey}
-        onChange={(v) => updateField('apiKey', v)}
-        style={{ marginBottom: 10 }}
-      />
+      <div className={!draft.apiKey ? 'input-required' : ''}>
+        <Input
+          placeholder="API KEY"
+          type="password"
+          value={draft.apiKey}
+          onChange={(v) => updateField('apiKey', v)}
+          style={{ marginBottom: 10 }}
+        />
+      </div>
       <Input
         placeholder="模型名称，如 deepseek-chat"
         value={draft.model}

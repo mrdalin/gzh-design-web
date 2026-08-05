@@ -409,6 +409,11 @@ body {
   padding: 0 4px !important;
 }
 
+/* 模型管理：API Key 为空时红色边框提示 */
+.input-required .semi-input-wrapper {
+  border-color: var(--semi-color-danger) !important;
+}
+
 /* ─── 排版历史：右滑抽屉（本项目 Semi 2.101.1 无 Drawer 组件，自定义实现）─── */
 .drawer-mask {
   position: fixed;
