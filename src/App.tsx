@@ -589,7 +589,7 @@ export default function App() {
             v{APP_VERSION}
           </Text>
         </div>
-        <Space>
+        <Space spacing={12}>
           <span className="theme-color-switches" title="切换界面主题色">
             {COLOR_THEMES.map((t) => (
               <button
