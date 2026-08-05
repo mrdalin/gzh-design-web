@@ -176,13 +176,15 @@ export default function ModelManager({
         onChange={(v) => updateField('displayName', v)}
         style={{ marginBottom: 10 }}
       />
-      <Input
-        placeholder="API 地址，如 https://api.deepseek.com/v1"
-        value={draft.baseUrl}
-        onChange={(v) => updateField('baseUrl', v)}
-        style={{ marginBottom: 10 }}
-      />
-      <div className={!draft.apiKey ? 'input-required' : ''}>
+      <div className={!draft.baseUrl.trim() ? 'input-required' : ''}>
+        <Input
+          placeholder="API 地址，如 https://api.deepseek.com/v1"
+          value={draft.baseUrl}
+          onChange={(v) => updateField('baseUrl', v)}
+          style={{ marginBottom: 10 }}
+        />
+      </div>
+      <div className={!draft.apiKey.trim() ? 'input-required' : ''}>
         <Input
           placeholder="API KEY"
           type="password"
@@ -191,12 +193,14 @@ export default function ModelManager({
           style={{ marginBottom: 10 }}
         />
       </div>
-      <Input
-        placeholder="模型名称，如 deepseek-chat"
-        value={draft.model}
-        onChange={(v) => updateField('model', v)}
-        style={{ marginBottom: 12 }}
-      />
+      <div className={!draft.model.trim() ? 'input-required' : ''}>
+        <Input
+          placeholder="模型名称，如 deepseek-chat"
+          value={draft.model}
+          onChange={(v) => updateField('model', v)}
+          style={{ marginBottom: 12 }}
+        />
+      </div>
 
       <Space>
         <Button theme="solid" icon={editingId ? undefined : <IconPlus />} onClick={saveDraft}>
