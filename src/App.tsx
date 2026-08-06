@@ -383,7 +383,7 @@ export default function App() {
         const preview = `data:${ct};base64,${b64}`;
         // 后台并发上传，不阻塞文字解析；完成后回填真实 URL
         const ext = (image.contentType || 'image/png').split('/')[1] || 'png';
-        uploadImageB64(b64, imgbbKey, imgbbExpiry, `word-image-${totalImages}.${ext}`)
+        uploadImageB64(b64, imgbbKey, imgbbExpiry, `word-image-${totalImages}.${ext}`, ct)
           .then((res: any) => {
             pending.set(preview, res.url);
           })

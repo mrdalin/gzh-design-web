@@ -373,28 +373,47 @@ export async function layout(params: {
   return data as LayoutResult;
 }
 
-// 复用上传逻辑：调用方已持有 base64（可能带或不带 data URL 前缀）。
-export async function uploadImageB64(
-  base64: string,
+// ─── 图片上传（免 base64：浏览器直接以二进制字节 POST 到 /api/upload，
+//     服务端再包成 multipart 转发 imgbb；全程不经过 base64 编码，省内存、省带宽）────
+
+// 核心上传：body 为图片原始字节，key / name / expiration 走 query 参数。
+export async function uploadImageBytes(
+  bytes: Uint8Array | ArrayBuffer,
+  mime: string,
   key: string,
   expiration?: number,
   name?: string
 ): Promise<{ url: string; deleteUrl?: string; thumb?: string }> {
-  // 统一补全 data URL 前缀（/api/upload 内会再剥离），确保带或不带前缀都能用。
-  const withPrefix = base64.startsWith('data:') ? base64 : `data:image/png;base64,${base64}`;
-  const res = await fetch('/api/upload', {
+  const qs = new URLSearchParams();
+  qs.set('key', key);
+  if (name) qs.set('name', name);
+  if (expiration && expiration > 0) qs.set('expiration', String(Math.floor(expiration)));
+  const res = await fetch(`/api/upload?${qs.toString()}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      image: withPrefix,
-      key,
-      expiration: expiration && expiration > 0 ? expiration : undefined,
-      name,
-    }),
+    headers: { 'Content-Type': mime || 'application/octet-stream' },
+    body: bytes,
   });
   const data: any = await res.json();
   if (!res.ok) throw new Error(data.error || '图片上传失败');
   return data;
+}
+
+// 复用上传逻辑：调用方已持有 base64（可能带或不带 data URL 前缀）。
+// 这里把 base64 解码成字节后走二进制上传路径（免 base64 传输）。
+export async function uploadImageB64(
+  base64: string,
+  key: string,
+  expiration?: number,
+  name?: string,
+  mime: string = 'image/png'
+): Promise<{ url: string; deleteUrl?: string; thumb?: string }> {
+  const m = base64.match(/^data:([^;]+);base64,(.*)$/s);
+  const ct = m ? m[1] : mime;
+  const raw = m ? m[2] : base64; // 无前缀时当作纯 base64
+  const bin = atob(raw);
+  const arr = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return uploadImageBytes(arr, ct, key, expiration, name);
 }
 
 export async function uploadImage(
@@ -402,18 +421,9 @@ export async function uploadImage(
   key: string,
   expiration?: number
 ): Promise<{ url: string; deleteUrl?: string; thumb?: string }> {
-  // 同样规避 multipart 解析问题：图片以 base64 data URL 走 JSON。
-  const base64 = await fileToBase64(file);
-  return uploadImageB64(base64, key, expiration, file.name);
-}
-
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = () => reject(new Error('读取图片失败'));
-    reader.readAsDataURL(file);
-  });
+  // 直接取文件原始字节走二进制上传（免 base64 编码）。
+  const bytes = await file.arrayBuffer();
+  return uploadImageBytes(bytes, file.type || 'application/octet-stream', key, expiration, file.name);
 }
 
 export async function generateTheme(

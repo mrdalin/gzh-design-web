@@ -2,35 +2,63 @@
 // 图床代理：把用户上传的图片转发到 imgbb（用户自带 key，BYOK），返回可访问 URL。
 // 经 Worker 代理以避免浏览器直连 imgbb 的 CORS 问题，且 key 仅本次请求使用。
 //
-// 入站统一用 JSON（image 为 base64 data URL），避免 Cloudflare Pages Functions
-// 的 request.formData() 无法解析浏览器 multipart 的问题。出站到 imgbb 仍用 multipart。
+// 入站支持两种格式：
+//   1) 二进制（推荐，免 base64）：Content-Type 为图片 MIME，body 为图片原始字节，
+//      key / name / expiration 走 query 参数。浏览器端 uploadImage/uploadImageBytes 走此路径。
+//   2) JSON（兼容旧调用）：{ image: base64 data URL, key, name, expiration }。
+// 出站到 imgbb 统一用 multipart（image 为二进制文件）。
 
 export const onRequestOptions: any = () => new Response(null, { headers: cors() });
 export const onRequestPost = onRequestPostHandler;
 
 async function onRequestPostHandler({ request }: { request: Request }) {
   try {
-    const body: any = await request.json();
-    const imageB64: string | null = body.image || null;
-    const key: string | null = body.key || null;
-    const expiration: number | null = body.expiration || null;
-    const name: string | null = body.name || null;
+    const url = new URL(request.url);
+    const qKey = url.searchParams.get('key');
+    const qName = url.searchParams.get('name');
+    const qExpRaw = url.searchParams.get('expiration');
+    const qExp = qExpRaw ? parseInt(qExpRaw, 10) : null;
 
-    if (!imageB64) return json({ error: '缺少图片文件' }, 400);
-    if (!key) return json({ error: '缺少 imgbb API key' }, 400);
+    const contentType = (request.headers.get('content-type') || '').toLowerCase();
 
-    // strip data URL prefix（前端 readAsDataURL 会带上 "data:image/xxx;base64," 前缀，
-    // imgbb 只接受纯 base64 字符串，否则返回 code 120 Invalid base64 string）
-    const rawB64 = imageB64.replace(/^data:[^;]+;base64,/, '');
-    const fd = new FormData();
-    fd.append('image', rawB64);
-    if (name) {
-      fd.append('name', name);
+    let blob: Blob;
+    let blobName: string | null = qName;
+    let uploadKey: string;
+    let uploadExp: number | null = null;
+
+    if (contentType.includes('application/json')) {
+      // 兼容旧路径：body 为 { image: base64 data URL, key, name, expiration }
+      const body: any = await request.json();
+      const imageB64: string | null = body.image || null;
+      uploadKey = body.key || qKey || '';
+      blobName = body.name || qName;
+      uploadExp = body.expiration || qExp;
+      if (!imageB64) return json({ error: '缺少图片文件' }, 400);
+      if (!uploadKey) return json({ error: '缺少 imgbb API key' }, 400);
+      // strip data URL prefix（imgbb 只接受纯 base64 字符串，否则返回 code 120）
+      const rawB64 = imageB64.replace(/^data:[^;]+;base64,/, '');
+      const bin = atob(rawB64);
+      const arr = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+      blob = new Blob([arr], { type: 'application/octet-stream' });
+    } else {
+      // 二进制路径：body 为图片原始字节
+      const buf = await request.arrayBuffer();
+      if (!buf || buf.byteLength === 0) return json({ error: '缺少图片文件（空内容）' }, 400);
+      uploadKey = qKey || '';
+      uploadExp = qExp;
+      if (!uploadKey) return json({ error: '缺少 imgbb API key' }, 400);
+      const mime = contentType.split(';')[0] || 'application/octet-stream';
+      blob = new Blob([buf], { type: mime });
     }
 
+    const fd = new FormData();
+    fd.append('image', blob, blobName || 'image');
+    if (blobName) fd.append('name', blobName);
+
     const imgbbUrl =
-      `https://api.imgbb.com/1/upload?key=${encodeURIComponent(key)}` +
-      (expiration && expiration > 0 ? `&expiration=${Math.floor(expiration)}` : '');
+      `https://api.imgbb.com/1/upload?key=${encodeURIComponent(uploadKey)}` +
+      (uploadExp && uploadExp > 0 ? `&expiration=${Math.floor(uploadExp)}` : '');
     const resp = await fetch(imgbbUrl, {
       method: 'POST',
       body: fd,
@@ -45,12 +73,38 @@ async function onRequestPostHandler({ request }: { request: Request }) {
 
     const data: any = await resp.json();
     if (!data?.success) {
-      return json({ error: 'imgbb 上传失败：' + JSON.stringify(data?.error || `HTTP ${resp.status}`) }, 502);
+      const friendly = formatImgbbError(data, resp.status);
+      return json({ error: friendly, code: data?.error?.code ?? null, status: resp.status }, 502);
     }
     return json({ url: data.data.url, deleteUrl: data.data.delete_url, thumb: data.data.thumb?.url });
   } catch (e: any) {
     return json({ error: e?.message || '上传失败' }, 500);
   }
+}
+
+// 把 imgbb 的错误码 / 信息翻译成可读、可操作的中文提示（含限流、Key、体积、格式等细分）。
+function formatImgbbError(data: any, httpStatus: number): string {
+  const err = data?.error || {};
+  const code = err.code;
+  const msg: string = (err.message || '').toLowerCase();
+  const raw = data?.status ? `（HTTP ${data.status}）` : `（HTTP ${httpStatus}）`;
+
+  // 限流（imgbb 免费额度约每分钟 30 张 / 每小时 240 张，超额返回 429 或在 message 里提示）
+  if (httpStatus === 429 || /rate|limit|too many|quota/i.test(msg)) {
+    return `图片上传过于频繁，imgbb 已限流${raw}。请稍候 1–2 分钟再试；如需更高额度可在 imgbb 升级套餐。`;
+  }
+  // Key 相关
+  if (code === 100 || /api key|api_key|key is required|invalid api/i.test(msg)) {
+    return `imgbb API Key 无效或未填写${raw}：请到右上角「图片 API」检查或更换 Key（注意区分 v1 key 与匿名上传）。`;
+  }
+  // 体积 / 格式
+  if (code === 121) return `图片超过 imgbb 32MB 上限${raw}，请压缩后重试。`;
+  if (code === 120 || /base64|invalid image format/i.test(msg)) return `图片数据无效（imgbb 报 ${code ?? '格式错误'}）${raw}，请重新选择图片。`;
+  if (code === 122 || code === 123 || code === 124) return `图片格式不受支持或文件已损坏${raw}，请换一张图片（建议 PNG/JPG/GIF/WebP）。`;
+  if (code === 125) return `图片文件名格式不合法${raw}，请修改文件名后重试。`;
+  // 兜底
+  const detail = err.message ? `：${err.message}` : '';
+  return `imgbb 上传失败${raw}${detail}`;
 }
 
 function cors() {
