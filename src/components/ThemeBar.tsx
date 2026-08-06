@@ -7,12 +7,12 @@ const { Text } = Typography;
 
 // 主题预览图映射（按主题 id 匹配，id 由组件库文件名抽取，稳定不易错）
 const THEME_PREVIEW_MAP: Record<string, string> = {
-  'moyu-green': 'https://i.ibb.co/r2Z4Qn5Q/moyulv.jpg',
-  'red-white': 'https://i.ibb.co/xtVq89Z0/hongbai.jpg',
-  'graphite-minimal': 'https://i.ibb.co/sJcFqbSr/shimo.png',
-  'zen-whitespace': 'https://i.ibb.co/3YQvHrBh/whitespace.png',
-  'moyu-ticket': 'https://i.ibb.co/m1zD3PL/moyu-ticket.png',
-  'olive-journal': 'https://i.ibb.co/XkYxYmYH/ganlan.jpg',
+  'moyu-green': 'https://i.ibb.co/8DNzd4vp/moyulv.jpg',
+  'red-white': 'https://i.ibb.co/Y702fTDf/hongbai.jpg',
+  'graphite-minimal': 'https://i.ibb.co/YFfNJb8y/shimo.png',
+  'zen-whitespace': 'https://i.ibb.co/1JQywXZr/whitespace.png',
+  'moyu-ticket': 'https://i.ibb.co/KpShMQxj/moyu-ticket.png',
+  'olive-journal': 'https://i.ibb.co/kgkGnR5v/ganlan.jpg',
 };
 
 // 竖长图主题（原始比例为竖向，弹窗需按完整比例显示，不能裁切）
