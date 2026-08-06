@@ -244,14 +244,12 @@ body {
 }
 
 .phone-screen {
-  flex: 1 1 auto;
+  flex: 0 0 auto;
   min-height: 120px;
-  max-height: calc(100vh - 260px);
   display: flex;
   flex-direction: column;
   width: 100%;
   background: #fff;
-  overflow: hidden;
 }
 
 /* 顶部主题栏 */
