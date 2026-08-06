@@ -21,7 +21,7 @@ async function onRequestPostHandler({ request }: { request: Request }) {
 
     const contentType = (request.headers.get('content-type') || '').toLowerCase();
 
-    let blob: Blob;
+    let imageData: string; // 交给 imgbb 的 image 字段（base64 字符串；imgbb 接受且 CF→imgbb 最稳妥）
     let blobName: string | null = qName;
     let uploadKey: string;
     let uploadExp: number | null = null;
@@ -36,24 +36,27 @@ async function onRequestPostHandler({ request }: { request: Request }) {
       if (!imageB64) return json({ error: '缺少图片文件' }, 400);
       if (!uploadKey) return json({ error: '缺少 imgbb API key' }, 400);
       // strip data URL prefix（imgbb 只接受纯 base64 字符串，否则返回 code 120）
-      const rawB64 = imageB64.replace(/^data:[^;]+;base64,/, '');
-      const bin = atob(rawB64);
-      const arr = new Uint8Array(bin.length);
-      for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
-      blob = new Blob([arr], { type: 'application/octet-stream' });
+      imageData = imageB64.replace(/^data:[^;]+;base64,/, '');
     } else {
-      // 二进制路径：body 为图片原始字节
+      // 二进制路径：body 为图片原始字节（浏览器免 base64 直传）
       const buf = await request.arrayBuffer();
       if (!buf || buf.byteLength === 0) return json({ error: '缺少图片文件（空内容）' }, 400);
       uploadKey = qKey || '';
       uploadExp = qExp;
       if (!uploadKey) return json({ error: '缺少 imgbb API key' }, 400);
-      const mime = contentType.split(';')[0] || 'application/octet-stream';
-      blob = new Blob([buf], { type: mime });
+      // 转回 base64 字符串再交给 imgbb：imgbb 接受 base64，且 CF→imgbb 用 string 最稳妥
+      // （浏览器→CF 这一段仍是二进制免 base64，传输收益保留）。分块转避免大图 O(n^2)。
+      const bytes = new Uint8Array(buf);
+      let binary = '';
+      const CHUNK = 0x8000;
+      for (let i = 0; i < bytes.length; i += CHUNK) {
+        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK));
+      }
+      imageData = btoa(binary);
     }
 
     const fd = new FormData();
-    fd.append('image', blob, blobName || 'image');
+    fd.append('image', imageData);
     if (blobName) fd.append('name', blobName);
 
     const imgbbUrl =
