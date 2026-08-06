@@ -39,9 +39,10 @@ jobs:
             -H "Content-Type: application/json" \
             --data '{"name":"gzh-design-web","production_branch":"main"}' || true
 
+      # 直接用 npm ci 已安装的本地 wrangler 部署，绕开 wrangler-action
+      # 在 GitHub 强制 Node 24 runner 下的兼容问题（截图 npx exit code 1）
       - name: Deploy to Cloudflare Pages
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy dist --project-name=gzh-design-web --branch=main
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: ./node_modules/.bin/wrangler pages deploy dist --project-name=gzh-design-web --branch=main
