@@ -377,7 +377,8 @@ export async function layout(params: {
 export async function uploadImageB64(
   base64: string,
   key: string,
-  expiration?: number
+  expiration?: number,
+  name?: string
 ): Promise<{ url: string; deleteUrl?: string; thumb?: string }> {
   // 统一补全 data URL 前缀（/api/upload 内会再剥离），确保带或不带前缀都能用。
   const withPrefix = base64.startsWith('data:') ? base64 : `data:image/png;base64,${base64}`;
@@ -388,6 +389,7 @@ export async function uploadImageB64(
       image: withPrefix,
       key,
       expiration: expiration && expiration > 0 ? expiration : undefined,
+      name,
     }),
   });
   const data: any = await res.json();
@@ -402,7 +404,7 @@ export async function uploadImage(
 ): Promise<{ url: string; deleteUrl?: string; thumb?: string }> {
   // 同样规避 multipart 解析问题：图片以 base64 data URL 走 JSON。
   const base64 = await fileToBase64(file);
-  return uploadImageB64(base64, key, expiration);
+  return uploadImageB64(base64, key, expiration, file.name);
 }
 
 function fileToBase64(file: File): Promise<string> {

@@ -27,6 +27,7 @@ import { ModelAvatar, isModelConfigured, modelLabel } from './modelIcons';
 import { fetchThemes, layoutClientSideStream, liveClean, generateArticle, uploadImageB64 } from './lib/api';
 import { htmlToMarkdown } from './lib/htmlToMarkdown';
 import { markdownToHtml } from './lib/markdownToHtml';
+import { PLACEHOLDER_IMG, sanitizeHtmlImages, sanitizeMdImages } from './lib/imageSanitize';
 import { useScrollSync } from './lib/useScrollSync';
 import { countWords } from './lib/wordCount';
 import mammoth from 'mammoth';
@@ -63,40 +64,6 @@ import ModelManager from './components/ModelManager';
 import CustomThemeWizard from './components/CustomThemeWizard';
 
 const { Text } = Typography;
-
-// 无 imgbb Key 或上传失败时，Word 图片占位文案（富文本灰块与 Markdown 占位符共用）。
-const PLACEHOLDER_MESSAGE =
-  '图片占位。请在右上角配置「图片 API」后重传 Word 以自动上传图片';
-
-// 无 imgbb Key 时 Word 图片占位（可见灰块，提示用户配置图床后重传 Word）。
-const PLACEHOLDER_IMG =
-  'data:image/svg+xml,' +
-  encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="160"><rect width="100%" height="100%" fill="#f0f0f0"/><text x="50%" y="50%" font-family="-apple-system,Segoe UI,sans-serif" font-size="14" fill="#999" text-anchor="middle" dominant-baseline="middle">${PLACEHOLDER_MESSAGE}</text></svg>`
-  );
-
-// 兜底：把 Markdown 里残留的 data:image base64 图片统一替换成干净占位符。
-function sanitizeMdImages(md: string): string {
-  let idx = 0;
-  return md.replace(/!\[([^\]]*)\]\((data:image\/[^)]+)\)/g, () => {
-    idx++;
-    return `![图片 ${idx} 占位：${PLACEHOLDER_MESSAGE}](#pending)`;
-  });
-}
-
-// 把富文本 HTML 中仍未替换的 data:image 图片统一换成 #pending 占位并写入占位文案，
-// 避免 htmlToMarkdown 后再现 base64 长串；已成功替换为真实 URL 的图不受影响。
-function sanitizeHtmlImages(html: string): string {
-  let idx = 0;
-  return html.replace(
-    /<img\b[^>]*\bsrc=(["'])data:image\/[^"']*\1[^>]*>/gi,
-    () => {
-      idx++;
-      const alt = PLACEHOLDER_MESSAGE.replace('图片占位', `图片 ${idx} 占位`);
-      return `<img src="#pending" alt="${alt.replace(/"/g, '&quot;')}">`;
-    }
-  );
-}
 
 // GitHub 风格「Star」按钮图标（Octicons star，与 GitHub 完全一致）。
 function GitHubStarIcon() {
@@ -274,8 +241,10 @@ export default function App() {
       Toast.warning('左侧编辑器还没有内容');
       return;
     }
-    const md = htmlToMarkdown(richHtml);
-    setArticle(md);
+    // 富文本里的占位 SVG / 未上传成功的 base64 图先统一清洗成占位符，
+    // 避免「转换为 Markdown」后中间编辑器出现 base64 长串。
+    const md = htmlToMarkdown(sanitizeHtmlImages(richHtml));
+    setArticle(sanitizeMdImages(md));
     Toast.success('已转换为 Markdown，可在中间编辑器二次编辑');
   }
 
@@ -413,7 +382,8 @@ export default function App() {
         const ct = image.contentType || 'image/png';
         const preview = `data:${ct};base64,${b64}`;
         // 后台并发上传，不阻塞文字解析；完成后回填真实 URL
-        uploadImageB64(b64, imgbbKey, imgbbExpiry)
+        const ext = (image.contentType || 'image/png').split('/')[1] || 'png';
+        uploadImageB64(b64, imgbbKey, imgbbExpiry, `word-image-${totalImages}.${ext}`)
           .then((res: any) => {
             pending.set(preview, res.url);
           })

@@ -17,6 +17,7 @@ import {
 import { uploadImage } from '../lib/api';
 import { countWords } from '../lib/wordCount';
 import { htmlToMarkdown } from '../lib/htmlToMarkdown';
+import { sanitizeHtmlImages } from '../lib/imageSanitize';
 
 const { Text } = Typography;
 
@@ -129,13 +130,19 @@ export default function RichEditor({ html, onChange, imgbbKey, imgbbExpiry, disa
   }
 
   // 富文本 → Markdown：输入防抖转换，避免逐字符触发整篇 htmlToMarkdown
+  // 转换前先把 data:image（占位 SVG / 粘贴进来的 base64 图）清洗为占位符，
+  // 保证中间 Markdown 编辑器绝不出 base64 长串。
+  function richHtmlToMd(html: string) {
+    return htmlToMarkdown(sanitizeHtmlImages(html));
+  }
+
   function scheduleConvert() {
     if (!onAutoConvert) return;
     if (convertTimer.current) clearTimeout(convertTimer.current);
     convertTimer.current = window.setTimeout(() => {
       const cur = editorRef.current?.innerHTML || '';
       if (cur.replace(/<[^>]+>/g, '').trim() || cur.includes('<img')) {
-        onAutoConvert(htmlToMarkdown(cur));
+        onAutoConvert(richHtmlToMd(cur));
       }
     }, 400);
   }
@@ -173,8 +180,7 @@ export default function RichEditor({ html, onChange, imgbbKey, imgbbExpiry, disa
         requestAnimationFrame(() => {
           const currentHtml = editorRef.current?.innerHTML || '';
           if (currentHtml.replace(/<[^>]+>/g, '').trim()) {
-            const md = htmlToMarkdown(currentHtml);
-            onAutoConvert(md);
+            onAutoConvert(richHtmlToMd(currentHtml));
           }
         });
       }
@@ -203,7 +209,7 @@ export default function RichEditor({ html, onChange, imgbbKey, imgbbExpiry, disa
         requestAnimationFrame(() => {
           const currentHtml = editorRef.current?.innerHTML || '';
           if (currentHtml.replace(/<[^>]+>/g, '').trim() || currentHtml.includes('<img')) {
-            const md = htmlToMarkdown(currentHtml);
+            const md = richHtmlToMd(currentHtml);
             onAutoConvert(md);
           }
         });
@@ -328,7 +334,7 @@ export default function RichEditor({ html, onChange, imgbbKey, imgbbExpiry, disa
           if (onAutoConvert) {
             const cur = editorRef.current?.innerHTML || '';
             if (cur.replace(/<[^>]+>/g, '').trim() || cur.includes('<img')) {
-              onAutoConvert(htmlToMarkdown(cur));
+              onAutoConvert(richHtmlToMd(cur));
             }
           }
         }}
