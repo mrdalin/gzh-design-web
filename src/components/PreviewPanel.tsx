@@ -254,16 +254,18 @@ export default function PreviewPanel({
         </Space>
       </div>
 
-      <div
-        ref={(el) => {
-          internalScrollRef.current = el;
-          if (scrollRef) {
-            if (typeof scrollRef === 'function') scrollRef(el);
-            else (scrollRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
-          }
-        }}
-        style={{ flex: 1, overflow: 'auto', background: 'var(--semi-color-fill-0)' }}
-      >
+      <div className="phone-bezel">
+        <div className="phone-screen">
+          <div
+            ref={(el) => {
+              internalScrollRef.current = el;
+              if (scrollRef) {
+                if (typeof scrollRef === 'function') scrollRef(el);
+                else (scrollRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+              }
+            }}
+            style={{ flex: 1, overflow: 'auto', background: '#fff' }}
+          >
         {loading && stream ? (
           <div
             className="preview-frame stream-live"
@@ -287,6 +289,8 @@ export default function PreviewPanel({
         ) : (
           <div ref={frameRef} className="preview-frame" dangerouslySetInnerHTML={{ __html: html }} />
         )}
+          </div>
+        </div>
       </div>
 
       {/* 生成中状态条：固定显示在滚动区下方、底部栏上方，生成完成后自动消失 */}

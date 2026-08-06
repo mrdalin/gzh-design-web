@@ -158,20 +158,34 @@ body {
   flex: 1;
   min-height: 0;
   display: flex;
+  overflow-x: auto; /* 小屏兜底：横向滚动而非挤压三栏 */
 }
 
-/* 三栏原型布局 */
+/* 三栏原型布局：均衡优先（右栏锁 390 手机预览，左/中 flex:1 等分剩余空间） */
 .app-shell-proto {
   display: flex;
 }
 
 .app-shell-proto > aside,
 .app-shell-proto > main {
-  flex: 1;
-  min-width: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  min-width: 0;
+}
+
+/* 左：富文本 / 中：Markdown —— 等分剩余空间，最小 280 防止过窄 */
+.app-shell-proto > .app-rich,
+.app-shell-proto > .app-md {
+  flex: 1 1 0;
+  min-width: 280px;
+}
+
+/* 右：手机预览 —— 锁定 390 视口宽，并在该面板内将预览内文宽度降为手机比例 */
+.app-shell-proto > .app-preview {
+  flex: 0 0 390px;
+  min-width: 390px;
+  --gzh-max-width: 390px;
 }
 
 .app-shell-proto > aside + aside,
@@ -186,6 +200,39 @@ body {
   padding: 16px;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+}
+
+/* 手机外框：仅框住文章显示区，还原微信手机端阅读比例（纯装饰，不影响截图） */
+.phone-bezel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #0e0e10;
+  border-radius: 30px;
+  padding: 14px 9px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16);
+}
+
+.phone-bezel::before {
+  content: "";
+  width: 52px;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.18);
+  margin-bottom: 8px;
+  flex-shrink: 0;
+}
+
+.phone-screen {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: 22px;
   overflow: hidden;
 }
 
