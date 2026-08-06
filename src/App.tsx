@@ -64,21 +64,38 @@ import CustomThemeWizard from './components/CustomThemeWizard';
 
 const { Text } = Typography;
 
+// 无 imgbb Key 或上传失败时，Word 图片占位文案（富文本灰块与 Markdown 占位符共用）。
+const PLACEHOLDER_MESSAGE =
+  '图片占位。请在右上角配置「图片 API」后重传 Word 以自动上传图片';
+
 // 无 imgbb Key 时 Word 图片占位（可见灰块，提示用户配置图床后重传 Word）。
 const PLACEHOLDER_IMG =
   'data:image/svg+xml,' +
   encodeURIComponent(
-    '<svg xmlns="http://www.w3.org/2000/svg" width="320" height="160"><rect width="100%" height="100%" fill="#f0f0f0"/><text x="50%" y="50%" font-family="-apple-system,Segoe UI,sans-serif" font-size="14" fill="#999" text-anchor="middle" dominant-baseline="middle">图片占位（配置「图片 API」后重传 Word 可自动上传）</text></svg>'
+    `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="160"><rect width="100%" height="100%" fill="#f0f0f0"/><text x="50%" y="50%" font-family="-apple-system,Segoe UI,sans-serif" font-size="14" fill="#999" text-anchor="middle" dominant-baseline="middle">${PLACEHOLDER_MESSAGE}</text></svg>`
   );
 
-// 把 Markdown 里残留的 data:image base64 图片（解析中预览图 / 上传失败占位图）
-// 统一替换成干净的占位符，避免 base64 长串污染编辑区。已成功拿到真实 URL 的图不受影响。
+// 兜底：把 Markdown 里残留的 data:image base64 图片统一替换成干净占位符。
 function sanitizeMdImages(md: string): string {
   let idx = 0;
-  return md.replace(/!\[([^\]]*)\]\((data:image\/[^)]+)\)/g, (_m, alt: string) => {
+  return md.replace(/!\[([^\]]*)\]\((data:image\/[^)]+)\)/g, () => {
     idx++;
-    return `![图片 ${idx}（待更新）](${alt && alt !== 'image' ? alt : '#pending'})`;
+    return `![图片 ${idx} 占位：${PLACEHOLDER_MESSAGE}](#pending)`;
   });
+}
+
+// 把富文本 HTML 中仍未替换的 data:image 图片统一换成 #pending 占位并写入占位文案，
+// 避免 htmlToMarkdown 后再现 base64 长串；已成功替换为真实 URL 的图不受影响。
+function sanitizeHtmlImages(html: string): string {
+  let idx = 0;
+  return html.replace(
+    /<img\b[^>]*\bsrc=(["'])data:image\/[^"']*\1[^>]*>/gi,
+    () => {
+      idx++;
+      const alt = PLACEHOLDER_MESSAGE.replace('图片占位', `图片 ${idx} 占位`);
+      return `<img src="#pending" alt="${alt.replace(/"/g, '&quot;')}">`;
+    }
+  );
 }
 
 // 模型是否「配置良好」：需 baseUrl + apiKey + model 三者齐全（预设模型的 Key 默认为空）。
@@ -141,6 +158,8 @@ export default function App() {
   const docxBusyRef = useRef(false);
   // Word 图片正在后台上传 imgbb：true 时禁用「生成排版」按钮（内容尚未就绪）。
   const [wordImageUploading, setWordImageUploading] = useState(false);
+  // 配置了 imgbb Key 时，Word 图片上传的全屏顶层进度（第 X / 共 Y 张），防止用户编辑并告知进度。
+  const [wordUploadProgress, setWordUploadProgress] = useState<{ current: number; total: number } | null>(null);
   // Word 解析中（含图片后台上传）的受控状态：用于显示内联状态条，收尾时可靠消失，
   // 取代原先「duration:0 的 Toast」——那段 Toast 在某些情况下无法被正确关闭而常驻顶部。
   const [wordParsing, setWordParsing] = useState(false);
@@ -331,15 +350,18 @@ export default function App() {
           const finalHtml = document.querySelector('.rich-editor')?.innerHTML || '';
           syncingFromRich.current = true;
           setRichHtml(finalHtml);
-          // 关键：富文本 DOM 里可能仍残留 data:image（解析中预览 / 上传失败占位），
-          // 这里把 Markdown 重新派生后做一次清洗，确保编辑区永不出现 base64 长串。
-          setArticle(sanitizeMdImages(htmlToMarkdown(finalHtml)));
+          // 关键：富文本 DOM 里可能仍残留 data:image（无 Key 时的 SVG 占位 / 上传失败占位 /
+          // 解析中预览），先把这些 HTML 统一清洗为占位，再转 Markdown，
+          // 确保 Markdown 编辑区永不出现 base64 长串；富文本区仍保留可视化灰占位。
+          const sanitizedHtml = sanitizeHtmlImages(finalHtml);
+          setArticle(sanitizeMdImages(htmlToMarkdown(sanitizedHtml)));
           requestAnimationFrame(() => {
             requestAnimationFrame(() => {
               syncingFromRich.current = false;
             });
           });
           setWordParsing(false);
+          setWordUploadProgress(null);
           Toast.success(
             `Word 已解析为 Markdown（约 ${md.length} 字${totalImages ? `，${totalImages} 张图片` : ''}）`
           );
@@ -360,10 +382,10 @@ export default function App() {
 
       const convertImage = mammoth.images.imgElement(async (image: any) => {
         const b64 = await image.read('base64');
+        totalImages++; // 无论是否有 Key，都计入图片总数，方便后续提示与进度展示
         if (!hasKey) return { src: PLACEHOLDER_IMG };
         const ct = image.contentType || 'image/png';
         const preview = `data:${ct};base64,${b64}`;
-        totalImages++;
         // 后台并发上传，不阻塞文字解析；完成后回填真实 URL
         uploadImageB64(b64, imgbbKey, imgbbExpiry)
           .then((res: any) => {
@@ -378,6 +400,9 @@ export default function App() {
           })
           .finally(() => {
             doneImages++;
+            setWordUploadProgress((prev) =>
+              prev ? { ...prev, current: doneImages } : prev
+            );
             patchImages();
             maybeFinish();
           });
@@ -395,6 +420,7 @@ export default function App() {
       md = result.value.trim();
       if (!md) {
         setWordParsing(false);
+        setWordUploadProgress(null);
         docxBusyRef.current = false;
         setWordImageUploading(false);
         Toast.warning('Word 文件内容为空');
@@ -409,9 +435,12 @@ export default function App() {
         return `![图片 ${imgIdx}（上传中…）](${alt ? alt : '#pending'})`;
       });
 
-      // 有图片且需要上传时，标记「图片上传中」以禁用生成排版按钮
+      // 有图片且需要上传时，标记「图片上传中」以禁用生成排版按钮，并弹出全屏上传进度。
       const hasPendingImages = hasKey && totalImages > 0;
-      if (hasPendingImages) setWordImageUploading(true);
+      if (hasPendingImages) {
+        setWordImageUploading(true);
+        setWordUploadProgress({ current: 0, total: totalImages });
+      }
 
       // 同时更新 Markdown 区（占位符版）和富文本区（dataURL 预览版）
       syncingFromRich.current = true;
@@ -437,6 +466,7 @@ export default function App() {
       });
     } catch (e: any) {
       setWordParsing(false);
+      setWordUploadProgress(null);
       docxBusyRef.current = false;
       setWordImageUploading(false);
       console.error('[Word 解析失败]', e);
@@ -844,6 +874,44 @@ export default function App() {
         >
           <Spin size="small" />
           <span>正在解析 Word，文字优先显示，图片稍后自动上传…</span>
+        </div>
+      )}
+
+      {wordUploadProgress && (
+        <div
+          data-testid="word-upload-overlay"
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 9999,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 16,
+            background: 'rgba(255, 255, 255, 0.85)',
+            backdropFilter: 'blur(2px)',
+          }}
+        >
+          <Spin size="large" />
+          <Text
+            strong
+            style={{
+              fontSize: 16,
+              color: 'var(--semi-color-text-0, #1c1f23)',
+            }}
+          >
+            正在上传图片，已完成 {wordUploadProgress.current} / {wordUploadProgress.total} 张
+          </Text>
+          <Text
+            type="tertiary"
+            style={{ fontSize: 13 }}
+          >
+            上传完成前请勿编辑或切换内容
+          </Text>
         </div>
       )}
 
