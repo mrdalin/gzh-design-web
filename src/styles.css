@@ -218,9 +218,9 @@ body {
 /* 手机外框：细边浅色、自然高度，解决之前 12px 深色粗边框的"黑胖子"问题 */
 .phone-bezel {
   flex-shrink: 0;
-  margin: auto 0;
   width: 390px;
   max-width: 100%;
+  min-height: 100%; /* 空态时撑满 preview-stage 内容高度，上下由 stage padding 留白 */
   display: flex;
   flex-direction: column;
   background: #fff;
@@ -244,7 +244,7 @@ body {
 }
 
 .phone-screen {
-  flex: 0 0 auto;
+  flex: 1 1 auto;
   min-height: 120px;
   display: flex;
   flex-direction: column;
