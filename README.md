@@ -152,7 +152,12 @@ scripts/            build-assets.mjs（打包 skill 资产）
 
 - 当前版本号见 `src/config.ts` 的 `APP_VERSION`（格式 `YYYYMMDD.00X`，每日重置，硬刷新生效）。
 - **稳定锚点（均已打 git tag，可随时回退）**：
-  - `v20260806.002`（commit `78814f4`）：**当前推荐版本**。imgbb 图床优化：上传通道免 base64（浏览器以二进制字节直传、服务端再包 multipart 转发 imgbb，省内存省带宽）；服务端对 imgbb 错误码做中文细分提示（限流 429 / Key 无效 / 超 32MB / 格式损坏 / 维护页等），所有上传入口（文件、富文本插图、Word）的错误提示更可读可操作。
+  - `v20260806.004`（commit `9672e09`）：**当前推荐版本**。图片上传改为**浏览器直连 imgbb**（`https://api.imgbb.com/1/upload`，原字节 FormData、免 base64），彻底解决之前经 Cloudflare Functions 代理 `/api/upload` 上传必 502 的问题（CF 出口 fetch 到 api.imgbb.com 被平台层整体拦截，与代码无关）。**这是唯一能正常上传图片的版本**；imgbb 错误码中文细分提示也随之前置到前端。
+    ```bash
+    git checkout v20260806.004   # 检出后重新构建部署即可
+    ```
+  - `v20260806.003`（commit `2f84a8e`，**历史记录 / 不可用**）：曾尝试把 CF→imgbb 改回 base64 字符串以绕开 502，但线上仍被 CF 平台层拦截，故仅作排障记录，不可作回退锚点。
+  - `v20260806.002`（commit `78814f4`，**兜底回退点 / 仅非上传功能可用**）：imgbb 图床优化：上传通道免 base64 + 服务端对 imgbb 错误码做中文细分提示。注意：该版本及更早版本的上传仍走 `/api/upload` 代理，在当前 CF 环境下上传图片会 502，仅适合回退「非上传类」问题。
     ```bash
     git checkout v20260806.002   # 检出后重新构建部署即可
     ```
@@ -167,7 +172,7 @@ scripts/            build-assets.mjs（打包 skill 资产）
   - `v20260805.026`（commit `d6eb949`）：早期稳定版（3 套界面色、模型下拉显模型名、必填项红框、历史角标等）。
 - 完整变更历程见下方「更新历程」。
 
-### 更新历程（v006 → v20260806.002）
+### 更新历程（v006 → v20260806.004）
 
 | 版本 | 关键改动 |
 |------|---------|
@@ -207,6 +212,8 @@ scripts/            build-assets.mjs（打包 skill 资产）
 | v039 | 修复 Word 图片占位文字截断与 Markdown base64 泄漏：占位 SVG 改为 100% 宽度 + 三行文字；富文本 → Markdown 全路径（手动转换、自动同步、粘贴/插入图片）均先清洗 data:image 再转 Markdown，中间编辑器绝不再出现 base64 长串；imgbb 上传附带 `name` 参数，便于图床管理文件名 |
 | v20260806.001 | 替换被误删的 6 张主题预览图为 imgbb 新地址（纯资源地址修正，非功能调整） |
 | v20260806.002 | imgbb 图床优化：上传通道免 base64（浏览器以二进制字节直传、服务端再包 multipart 转发 imgbb，省内存省带宽）；服务端对 imgbb 错误码做中文细分提示（限流 429 / Key 无效 / 超 32MB / 格式损坏 / 维护页），所有上传入口的错误更可读可操作 |
+| v20260806.003 | 尝试把 CF→imgbb 改回 base64 字符串以绕开 502，但线上仍被 Cloudflare 平台层拦截（回归失败，仅记录） |
+| v20260806.004 | **图片上传改浏览器直连 imgbb**，彻底解决 CF 代理 `/api/upload` 必 502：浏览器直接 POST 原字节 FormData 到 `https://api.imgbb.com/1/upload`（免 base64，BYOK key 本就在浏览器）；`data.data.url` 直链解析 + 错误码中文细分前置到前端；`functions/api/upload.ts` 标记 DEPRECATED |
 
 > 每个版本均经真实浏览器（Chromium）挂载验证（无白屏、无报错）后，由 GitHub Actions 自动部署到 Cloudflare Pages。
 
