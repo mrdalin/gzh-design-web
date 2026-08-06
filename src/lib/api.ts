@@ -373,10 +373,38 @@ export async function layout(params: {
   return data as LayoutResult;
 }
 
-// ─── 图片上传（免 base64：浏览器直接以二进制字节 POST 到 /api/upload，
-//     服务端再包成 multipart 转发 imgbb；全程不经过 base64 编码，省内存、省带宽）────
+// ─── 图片上传（浏览器直连 imgbb，绕过 Cloudflare Pages Functions 代理）────
+//
+// 为什么不做 CF 代理 /api/upload：
+//   Cloudflare Pages Functions 的出口 fetch 到 api.imgbb.com 会被平台层整体拦截
+//   （返回纯文本 error code: 502，连函数内 catch 都跑不到），任何改写（base64 /
+//   Blob / JSON）都无法绕开。而 imgbb 响应带 Access-Control-Allow-Origin: *，
+//   BYOK key 本就只存在浏览器 localStorage，因此浏览器可直接 POST 到 imgbb，
+//   既彻底避开 502，又免 base64（用原始字节 FormData）、省带宽。
+//
+//   functions/api/upload.ts 已废弃（保留仅供回溯），前端不再调用。
 
-// 核心上传：body 为图片原始字节，key / name / expiration 走 query 参数。
+// 把 imgbb 的错误码 / 信息翻译成可读、可操作的中文提示（含限流、Key、体积、格式等）。
+function formatImgbbError(data: any, httpStatus: number): string {
+  const err = data?.error || {};
+  const code = err.code;
+  const msg: string = (err.message || '').toLowerCase();
+  const raw = data?.status ? `（HTTP ${data.status}）` : `（HTTP ${httpStatus}）`;
+  if (httpStatus === 429 || /rate|limit|too many|quota/i.test(msg)) {
+    return `图片上传过于频繁，imgbb 已限流${raw}。请稍候 1–2 分钟再试；如需更高额度可在 imgbb 升级套餐。`;
+  }
+  if (code === 100 || /api key|api_key|key is required|invalid api/i.test(msg)) {
+    return `imgbb API Key 无效或未填写${raw}：请到右上角「图片 API」检查或更换 Key（注意区分 v1 key 与匿名上传）。`;
+  }
+  if (code === 121) return `图片超过 imgbb 32MB 上限${raw}，请压缩后重试。`;
+  if (code === 120 || /base64|invalid image format/i.test(msg)) return `图片数据无效（imgbb 报 ${code ?? '格式错误'}）${raw}，请重新选择图片。`;
+  if (code === 122 || code === 123 || code === 124) return `图片格式不受支持或文件已损坏${raw}，请换一张图片（建议 PNG/JPG/GIF/WebP）。`;
+  if (code === 125) return `图片文件名格式不合法${raw}，请修改文件名后重试。`;
+  const detail = err.message ? `：${err.message}` : '';
+  return `imgbb 上传失败${raw}${detail}`;
+}
+
+// 核心上传：浏览器直接以原始字节（Blob）POST 到 imgbb，免 base64。
 export async function uploadImageBytes(
   bytes: Uint8Array | ArrayBuffer,
   mime: string,
@@ -384,22 +412,40 @@ export async function uploadImageBytes(
   expiration?: number,
   name?: string
 ): Promise<{ url: string; deleteUrl?: string; thumb?: string }> {
+  if (!key?.trim()) throw new Error('请先在右上角「图片 API」填写 imgbb Key 后再上传图片');
   const qs = new URLSearchParams();
-  qs.set('key', key);
+  qs.set('key', key.trim());
   if (name) qs.set('name', name);
   if (expiration && expiration > 0) qs.set('expiration', String(Math.floor(expiration)));
-  const res = await fetch(`/api/upload?${qs.toString()}`, {
-    method: 'POST',
-    headers: { 'Content-Type': mime || 'application/octet-stream' },
-    body: bytes,
-  });
+
+  const blob = new Blob([bytes], { type: mime || 'application/octet-stream' });
+  const fd = new FormData();
+  fd.append('image', blob, name || 'image');
+
+  let res: Response;
+  try {
+    res = await fetch(`https://api.imgbb.com/1/upload?${qs.toString()}`, {
+      method: 'POST',
+      body: fd,
+    });
+  } catch (e: any) {
+    throw new Error(`无法连接 imgbb（${e?.message || '网络错误'}），请检查网络后重试`);
+  }
+
+  const ct = (res.headers.get('content-type') || '').toLowerCase();
+  if (!ct.includes('application/json')) {
+    const text = (await res.text().catch(() => '')) || '';
+    throw new Error(`imgbb 服务异常（HTTP ${res.status}），请稍后重试`);
+  }
   const data: any = await res.json();
-  if (!res.ok) throw new Error(data.error || '图片上传失败');
-  return data;
+  if (!data?.success) {
+    throw new Error(formatImgbbError(data, res.status));
+  }
+  return { url: data.data.url, deleteUrl: data.data.delete_url, thumb: data.data.thumb?.url };
 }
 
 // 复用上传逻辑：调用方已持有 base64（可能带或不带 data URL 前缀）。
-// 这里把 base64 解码成字节后走二进制上传路径（免 base64 传输）。
+// 这里把 base64 解码成字节后走浏览器直连 imgbb（免 base64 传输）。
 export async function uploadImageB64(
   base64: string,
   key: string,
@@ -421,7 +467,7 @@ export async function uploadImage(
   key: string,
   expiration?: number
 ): Promise<{ url: string; deleteUrl?: string; thumb?: string }> {
-  // 直接取文件原始字节走二进制上传（免 base64 编码）。
+  // 直接取文件原始字节走浏览器直连 imgbb（免 base64 编码）。
   const bytes = await file.arrayBuffer();
   return uploadImageBytes(bytes, file.type || 'application/octet-stream', key, expiration, file.name);
 }

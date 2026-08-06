@@ -1,6 +1,11 @@
-// POST /api/upload
-// 图床代理：把用户上传的图片转发到 imgbb（用户自带 key，BYOK），返回可访问 URL。
-// 经 Worker 代理以避免浏览器直连 imgbb 的 CORS 问题，且 key 仅本次请求使用。
+// POST /api/upload  ——  ⚠️ 已废弃 / DEPRECATED（前端不再调用）
+//
+// 历史：本函数作为图床代理，把图片转发到 imgbb（BYOK）。
+// 弃用原因：Cloudflare Pages Functions 的出口 fetch 到 api.imgbb.com 会被平台层
+// 整体拦截（返回纯文本 error code: 502，连函数内 catch 都跑不到），任何改写都无法绕开。
+// 现改为「浏览器直连 imgbb」：imgbb 响应带 Access-Control-Allow-Origin: *，且 BYOK key
+// 本就在浏览器 localStorage，故 src/lib/api.ts 的 uploadImageBytes 直接 POST 到
+// https://api.imgbb.com/1/upload，彻底避开 502 与 base64。保留本文件仅供回溯。
 //
 // 入站支持两种格式：
 //   1) 二进制（推荐，免 base64）：Content-Type 为图片 MIME，body 为图片原始字节，
