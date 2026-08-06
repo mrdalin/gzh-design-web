@@ -1,5 +1,7 @@
 # gzh-design-web · 公众号排版网页版
 
+> 📦 仓库地址：[mrdalin/gzh-design-web](https://github.com/mrdalin/gzh-design-web)（AGPL-3.0，源码公开）
+
 把 [gzh-design](https://github.com/isjiamu/gzh-design-skill) 这套「公众号排版 Agent 技能」改造成**普通用户也能用的网页工具**：粘贴/上传文章 → 选主题 → 一键排版 → 预览 → 复制粘贴到微信公众号后台。
 
 > 🤝 **原项目由 [甲木](https://github.com/isjiamu) × [「摸鱼小李」](https://mp.weixin.qq.com/s/EMahAzgfAbRQrYukWE7_IQ) 联名共建** —— 排版组件、主题设计与质量标准凝聚了两人的公众号实践与共同打磨，特别感谢小李。
