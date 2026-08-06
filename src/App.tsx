@@ -852,7 +852,7 @@ export default function App() {
           )}
           {REPO_URL && (
             <Button
-              className="header-action-btn github-star-btn"
+              className="header-action-btn"
               icon={<GitHubStarIcon />}
               onClick={() => window.open(REPO_URL, '_blank')}
               aria-label="在 GitHub 上 Star 本项目"

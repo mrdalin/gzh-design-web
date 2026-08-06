@@ -271,18 +271,6 @@ body {
   color: var(--semi-color-primary) !important;
 }
 
-/* GitHub Star 按钮：星形图标 + Star 文案 + 可选 Star 数，悬停高亮 */
-.github-star-btn {
-  font-weight: 500;
-}
-.github-star-btn svg {
-  vertical-align: -2px;
-}
-.github-star-btn:hover {
-  border-color: #d0d7de !important;
-  color: #24292f !important;
-  background: #f3f4f6 !important;
-}
 
 /* 模型选择触发器：头像 + 名称 + 箭头 */
 .model-select-trigger {
