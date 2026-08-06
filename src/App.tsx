@@ -98,6 +98,15 @@ function sanitizeHtmlImages(html: string): string {
   );
 }
 
+// GitHub 风格「Star」按钮图标（Octicons star，与 GitHub 完全一致）。
+function GitHubStarIcon() {
+  return (
+    <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true">
+      <path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.751.751 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25Z"></path>
+    </svg>
+  );
+}
+
 // 模型是否「配置良好」：需 baseUrl + apiKey + model 三者齐全（预设模型的 Key 默认为空）。
 export default function App() {
   // 草稿：刷新页面后从本地缓存恢复，避免编辑内容丢失
@@ -118,6 +127,23 @@ export default function App() {
 
   const [imgbbKey, setImgbbKey] = useState('');
   const [imgbbExpiry, setImgbbExpiry] = useState(0);
+
+  // GitHub 仓库 Star 数（用于顶栏「Star」按钮展示，失败则只显示 Star 不显示数字）。
+  const [starCount, setStarCount] = useState<number | null>(null);
+  useEffect(() => {
+    if (!REPO_URL) return;
+    const m = REPO_URL.match(/github\.com\/([^/]+)\/([^/]+)/);
+    if (!m) return;
+    const api = `https://api.github.com/repos/${m[1]}/${m[2]}`;
+    fetch(api)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d && typeof d.stargazers_count === 'number') setStarCount(d.stargazers_count);
+      })
+      .catch(() => {
+        /* 网络/限流失败时静默，仅显示 Star 不显示数字 */
+      });
+  }, [REPO_URL]);
 
   // 界面主题色（按钮/链接/选中边框等主色），默认公众号绿，用户可在右上角切换并持久化。
   const [colorTheme, setColorTheme] = useState(getStoredThemeId());
@@ -834,16 +860,29 @@ export default function App() {
             </Button>
           )}
           {REPO_URL && (
-            <Button className="header-action-btn" icon={<IconCode />} onClick={() => window.open(REPO_URL, '_blank')}>
-              源码
+            <Button
+              className="header-action-btn github-star-btn"
+              icon={<GitHubStarIcon />}
+              onClick={() => window.open(REPO_URL, '_blank')}
+              aria-label="在 GitHub 上 Star 本项目"
+            >
+              Star
+              {starCount != null && starCount > 0 &&
+                (starCount >= 1000
+                  ? ` ${(starCount / 1000).toFixed(1).replace(/\.0$/, '')}k`
+                  : ` ${starCount}`)}
             </Button>
           )}
-          <Button className="header-action-btn" icon={<IconImage />} onClick={() => setImgbbVisible(true)}>
-            图片 API
-          </Button>
-          <Button className="header-action-btn" icon={<IconSetting />} onClick={() => setModelVisible(true)}>
-            模型 API
-          </Button>
+          <Badge dot={!imgbbKey?.trim()} type="danger" position="rightTop">
+            <Button className="header-action-btn" icon={<IconImage />} onClick={() => setImgbbVisible(true)}>
+              图片 API
+            </Button>
+          </Badge>
+          <Badge dot={!models.some(isModelConfigured)} type="danger" position="rightTop">
+            <Button className="header-action-btn" icon={<IconSetting />} onClick={() => setModelVisible(true)}>
+              模型 API
+            </Button>
+          </Badge>
         </Space>
       </header>
 
