@@ -254,18 +254,19 @@ export default function PreviewPanel({
         </Space>
       </div>
 
-      <div className="phone-bezel">
-        <div className="phone-screen">
-          <div
-            ref={(el) => {
-              internalScrollRef.current = el;
-              if (scrollRef) {
-                if (typeof scrollRef === 'function') scrollRef(el);
-                else (scrollRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
-              }
-            }}
-            style={{ flex: 1, overflow: 'auto', background: '#fff' }}
-          >
+      <div className="preview-stage">
+        <div className="phone-bezel">
+          <div className="phone-screen">
+            <div
+              ref={(el) => {
+                internalScrollRef.current = el;
+                if (scrollRef) {
+                  if (typeof scrollRef === 'function') scrollRef(el);
+                  else (scrollRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+                }
+              }}
+              style={{ flex: 1, overflow: 'auto', background: '#fff' }}
+            >
         {loading && stream ? (
           <div
             className="preview-frame stream-live"
@@ -287,8 +288,9 @@ export default function PreviewPanel({
             </Paragraph>
           </div>
         ) : (
-          <div ref={frameRef} className="preview-frame" dangerouslySetInnerHTML={{ __html: html }} />
-        )}
+            <div ref={frameRef} className="preview-frame" dangerouslySetInnerHTML={{ __html: html }} />
+          )}
+            </div>
           </div>
         </div>
       </div>

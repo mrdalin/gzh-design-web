@@ -158,33 +158,33 @@ body {
   flex: 1;
   min-height: 0;
   display: flex;
+  min-width: 1012px; /* 三栏最小总宽：452 + 280 + 280，小屏触发横向滚动 */
   overflow-x: auto; /* 小屏兜底：横向滚动而非挤压三栏 */
 }
 
-/* 三栏原型布局：均衡优先（右栏锁 390 手机预览，左/中 flex:1 等分剩余空间） */
+/* 三栏原型布局：三等分，右栏内部手机预览框居中悬浮 */
 .app-shell-proto {
   display: flex;
 }
 
 .app-shell-proto > aside,
 .app-shell-proto > main {
+  flex: 1 1 0;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  min-width: 0;
 }
 
-/* 左：富文本 / 中：Markdown —— 等分剩余空间，最小 280 防止过窄 */
+/* 左/中栏最小宽度，避免过小影响编辑 */
 .app-shell-proto > .app-rich,
 .app-shell-proto > .app-md {
-  flex: 1 1 0;
   min-width: 280px;
 }
 
-/* 右：手机预览 —— 锁定 390 视口宽，并在该面板内将预览内文宽度降为手机比例 */
+/* 右预览栏最小要放得下手机外框（414px 外框 + 两侧留白） */
 .app-shell-proto > .app-preview {
-  flex: 0 0 390px;
-  min-width: 390px;
+  min-width: 452px;
   --gzh-max-width: 390px;
 }
 
@@ -203,17 +203,32 @@ body {
   overflow: hidden;
 }
 
-/* 手机外框：仅框住文章显示区，还原微信手机端阅读比例（纯装饰，不影响截图） */
-.phone-bezel {
+/* 预览舞台：手机外框居中悬浮，四周留白 */
+.preview-stage {
   flex: 1;
   min-height: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  background: #0e0e10;
+  padding: 16px;
+  overflow: auto;
+  background: var(--semi-color-fill-0);
+}
+
+/* 手机外框：固定 390px 内容宽，边框在外，整体 414px；居中、不顶天立地 */
+.phone-bezel {
+  flex-shrink: 0;
+  margin: auto 0;
+  width: 414px;
+  max-width: 100%;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #1f1f1f;
   border-radius: 30px;
-  padding: 14px 9px;
+  padding: 12px;
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16);
+  box-sizing: border-box;
 }
 
 .phone-bezel::before {
@@ -222,17 +237,20 @@ body {
   height: 5px;
   border-radius: 3px;
   background: rgba(255, 255, 255, 0.18);
-  margin-bottom: 8px;
+  margin: 0 auto 10px;
   flex-shrink: 0;
 }
 
 .phone-screen {
-  flex: 1;
-  min-height: 0;
+  flex: 1 1 auto;
+  min-height: 420px;
+  max-height: calc(100vh - 240px);
   display: flex;
   flex-direction: column;
+  width: 390px;
+  max-width: 100%;
   background: #fff;
-  border-radius: 22px;
+  border-radius: 18px;
   overflow: hidden;
 }
 
