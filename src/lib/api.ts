@@ -404,7 +404,14 @@ function formatImgbbError(data: any, httpStatus: number): string {
   return `imgbb 上传失败${raw}${detail}`;
 }
 
+// 简单延时（用于限流/网络抖动的退避重试）
+function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
 // 核心上传：浏览器直接以原始字节（Blob）POST 到 imgbb，免 base64。
+// 内置限流/网络抖动重试：imgbb 免费额度约 30 张/分钟，多图并发可能触发 429，
+// 这里在 429 或网络异常时指数退避重试（最多 4 次），避免一次性多图上传大量失败。
 export async function uploadImageBytes(
   bytes: Uint8Array | ArrayBuffer,
   mime: string,
@@ -422,26 +429,40 @@ export async function uploadImageBytes(
   const fd = new FormData();
   fd.append('image', blob, name || 'image');
 
-  let res: Response;
-  try {
-    res = await fetch(`https://api.imgbb.com/1/upload?${qs.toString()}`, {
-      method: 'POST',
-      body: fd,
-    });
-  } catch (e: any) {
-    throw new Error(`无法连接 imgbb（${e?.message || '网络错误'}），请检查网络后重试`);
-  }
+  const MAX_ATTEMPTS = 4;
+  let lastErr: any = null;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    let res: Response;
+    try {
+      res = await fetch(`https://api.imgbb.com/1/upload?${qs.toString()}`, {
+        method: 'POST',
+        body: fd,
+      });
+    } catch (e: any) {
+      // 网络抖动：退避后重试
+      lastErr = new Error(`无法连接 imgbb（${e?.message || '网络错误'}），请检查网络后重试`);
+      if (attempt < MAX_ATTEMPTS) { await sleep(1200 * attempt); continue; }
+      throw lastErr;
+    }
 
-  const ct = (res.headers.get('content-type') || '').toLowerCase();
-  if (!ct.includes('application/json')) {
-    const text = (await res.text().catch(() => '')) || '';
-    throw new Error(`imgbb 服务异常（HTTP ${res.status}），请稍后重试`);
+    const ct = (res.headers.get('content-type') || '').toLowerCase();
+    if (!ct.includes('application/json')) {
+      // 非 JSON（维护页等）不重试，直接报错
+      throw new Error(`imgbb 服务异常（HTTP ${res.status}），请稍后重试`);
+    }
+    const data: any = await res.json();
+    if (!data?.success) {
+      const msg = formatImgbbError(data, res.status);
+      // 仅限流（429）重试：等更久一点再试；其余错误（Key/体积/格式）不重试
+      if (res.status === 429 || /限流/.test(msg)) {
+        lastErr = new Error(msg);
+        if (attempt < MAX_ATTEMPTS) { await sleep(1500 * attempt); continue; }
+      }
+      throw new Error(msg);
+    }
+    return { url: data.data.url, deleteUrl: data.data.delete_url, thumb: data.data.thumb?.url };
   }
-  const data: any = await res.json();
-  if (!data?.success) {
-    throw new Error(formatImgbbError(data, res.status));
-  }
-  return { url: data.data.url, deleteUrl: data.data.delete_url, thumb: data.data.thumb?.url };
+  throw lastErr ?? new Error('图片上传失败');
 }
 
 // 复用上传逻辑：调用方已持有 base64（可能带或不带 data URL 前缀）。

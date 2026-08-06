@@ -375,33 +375,54 @@ export default function App() {
         if (totalImages > 0 && doneImages >= totalImages) finish();
       };
 
+      // 多图 Word：mammoth 会为每个图片几乎同时触发上传，直接并发会瞬间打满 imgbb
+      // 免费额度（约 30 张/分钟）触发 429 限流。这里用「并发受限上传队列」（最多 3 张同时），
+      // 配合 api.ts 内的 429 退避重试，确保几张到几十张图都能稳定传完。
+      const MAX_CONCURRENT = 3;
+      let activeUploads = 0;
+      const uploadQueue: Array<() => Promise<void>> = [];
+      const pumpUploads = () => {
+        while (activeUploads < MAX_CONCURRENT && uploadQueue.length) {
+          const task = uploadQueue.shift()!;
+          activeUploads++;
+          task().finally(() => { activeUploads--; pumpUploads(); });
+        }
+      };
+      const enqueueUpload = (task: () => Promise<void>) => {
+        uploadQueue.push(task);
+        pumpUploads();
+      };
+
       const convertImage = mammoth.images.imgElement(async (image: any) => {
         const b64 = await image.read('base64');
         totalImages++; // 无论是否有 Key，都计入图片总数，方便后续提示与进度展示
         if (!hasKey) return { src: PLACEHOLDER_IMG };
         const ct = image.contentType || 'image/png';
         const preview = `data:${ct};base64,${b64}`;
-        // 后台并发上传，不阻塞文字解析；完成后回填真实 URL
+        // 后台并发上传（受队列并发上限约束），不阻塞文字解析；完成后回填真实 URL
         const ext = (image.contentType || 'image/png').split('/')[1] || 'png';
-        uploadImageB64(b64, imgbbKey, imgbbExpiry, `word-image-${totalImages}.${ext}`, ct)
-          .then((res: any) => {
-            pending.set(preview, res.url);
-          })
-          .catch((e: any) => {
-            imageFail++;
-            const reason = e?.message || String(e);
-            if (!firstErrorReason) firstErrorReason = reason;
-            console.warn('[Word 图片上传失败]', e);
-            pending.set(preview, PLACEHOLDER_IMG);
-          })
-          .finally(() => {
-            doneImages++;
-            setWordUploadProgress((prev) =>
-              prev ? { ...prev, current: doneImages } : prev
-            );
-            patchImages();
-            maybeFinish();
-          });
+        const idx = totalImages;
+        enqueueUpload(() =>
+          uploadImageB64(b64, imgbbKey, imgbbExpiry, `word-image-${idx}.${ext}`, ct)
+            .then((res: any) => {
+              pending.set(preview, res.url);
+            })
+            .catch((e: any) => {
+              imageFail++;
+              const reason = e?.message || String(e);
+              if (!firstErrorReason) firstErrorReason = reason;
+              console.warn('[Word 图片上传失败]', e);
+              pending.set(preview, PLACEHOLDER_IMG);
+            })
+            .finally(() => {
+              doneImages++;
+              setWordUploadProgress((prev) =>
+                prev ? { ...prev, current: doneImages } : prev
+              );
+              patchImages();
+              maybeFinish();
+            })
+        );
         return { src: preview };
       });
 
