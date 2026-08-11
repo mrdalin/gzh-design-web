@@ -104,8 +104,15 @@ export default function App() {
     const api = `https://api.github.com/repos/${m[1]}/${m[2]}`;
     fetch(api)
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (d && typeof d.stargazers_count === 'number') setStarCount(d.stargazers_count);
+      .then((d: unknown) => {
+        if (
+          d &&
+          typeof d === 'object' &&
+          'stargazers_count' in d &&
+          typeof (d as { stargazers_count?: unknown }).stargazers_count === 'number'
+        ) {
+          setStarCount((d as { stargazers_count: number }).stargazers_count);
+        }
       })
       .catch(() => {
         /* 网络/限流失败时静默，仅显示 Star 不显示数字 */
@@ -426,7 +433,13 @@ export default function App() {
         return { src: preview };
       });
 
-      const result = await mammoth.convertToMarkdown({ arrayBuffer }, {
+      // mammoth 类型声明缺少 convertToMarkdown（运行时存在），此处显式断言其签名
+      const mdResult = await (mammoth as unknown as {
+        convertToMarkdown: (
+          input: { arrayBuffer: ArrayBuffer },
+          options?: Parameters<typeof mammoth.convertToHtml>[1]
+        ) => Promise<{ value: string; messages: unknown[] }>;
+      }).convertToMarkdown({ arrayBuffer }, {
         convertImage,
         styleMap: [
           "b[style-name='Heading 1'] => h1:fresh",
@@ -434,7 +447,7 @@ export default function App() {
           "b[style-name='Heading 3'] => h3:fresh",
         ],
       });
-      md = result.value.trim();
+      md = mdResult.value.trim();
       if (!md) {
         setWordParsing(false);
         setWordUploadProgress(null);
@@ -468,8 +481,8 @@ export default function App() {
           syncingFromRich.current = false;
         });
       });
-      if (result.messages.length > 0) {
-        console.log('[Word 解析警告]', result.messages);
+      if (mdResult.messages.length > 0) {
+        console.log('[Word 解析警告]', mdResult.messages);
       }
       // 等富文本 DOM 渲染后再补图；无图片或无需上传则直接收尾
       requestAnimationFrame(() => {

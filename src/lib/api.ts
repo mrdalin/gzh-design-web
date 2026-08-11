@@ -425,7 +425,7 @@ export async function uploadImageBytes(
   if (name) qs.set('name', name);
   if (expiration && expiration > 0) qs.set('expiration', String(Math.floor(expiration)));
 
-  const blob = new Blob([bytes], { type: mime || 'application/octet-stream' });
+  const blob = new Blob([bytes as BlobPart], { type: mime || 'application/octet-stream' });
   const fd = new FormData();
   fd.append('image', blob, name || 'image');
 

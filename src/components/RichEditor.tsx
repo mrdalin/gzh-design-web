@@ -100,7 +100,7 @@ function sanitizeWordHtml(raw: string): string {
 }
 
 export default function RichEditor({ html, onChange, imgbbKey, imgbbExpiry, disabled, onNeedImgbbConfig, onAutoConvert, onClear, onDocxFile, scrollRef }: Props) {
-  const editorRef = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<HTMLDivElement | null>(null);
   const imgRef = useRef<HTMLInputElement>(null);
   const docxRef = useRef<HTMLInputElement>(null);
   const convertTimer = useRef<number | null>(null);

@@ -55,7 +55,7 @@ async function onRequestPostHandler({ request }: { request: Request }) {
       let binary = '';
       const CHUNK = 0x8000;
       for (let i = 0; i < bytes.length; i += CHUNK) {
-        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK));
+        binary += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + CHUNK)));
       }
       imageData = btoa(binary);
     }

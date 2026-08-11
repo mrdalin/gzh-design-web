@@ -40,7 +40,7 @@ interface Props {
   scrollRef?: React.Ref<HTMLDivElement>;
 }
 
-function safeText(s: string): string {
+function safeText(s: string | undefined): string {
   return (s || '').replace(/[\\/:*?"<>|]/g, '_').trim();
 }
 
@@ -115,7 +115,7 @@ export default function PreviewPanel({
   scrollRef,
 }: Props) {
   const frameRef = useRef<HTMLDivElement>(null);
-  const internalScrollRef = useRef<HTMLDivElement>(null);
+  const internalScrollRef = useRef<HTMLDivElement | null>(null);
   const [shotVisible, setShotVisible] = useState(false);
   const [capturing, setCapturing] = useState(false);
 
