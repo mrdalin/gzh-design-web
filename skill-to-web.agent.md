@@ -14,6 +14,10 @@ Cloudflare Pages（静态前端 dist + Pages Functions）
         │
         ▼
    第三方服务（LLM、图床、API…）经 Worker 代理，规避 CORS、保护 Key
+
+📌 **现役主路径**：本项目最终采用**浏览器直连第三方 BYOK**（LLM SSE 流式 + imgbb 直传），
+   绕过 Cloudflare Pages Functions ~30s CPU 时间限制，流式体验最好；前提是第三方开放 CORS。
+   Functions 仅保留备用/校验（如 `/api/postprocess`）。详见 README「架构说明」。
 ```
 
 **两种密钥/请求模式（按第三方是否开放浏览器直连 CORS 选择）**：
