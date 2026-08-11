@@ -31,8 +31,9 @@ Node ≥ 22（CI 用 22，本地实测 24 可用）。
 - 提交信息用中文 conventional 风格（fix:/feat:/docs:/chore:）。
 
 ## 当前状态与下一步
-- 当前版本 v20260806.010（`src/config.ts` 的 `APP_VERSION`），线上 https://wwwx.eu.cc 运行中。
-- 本地与远端同步于 `76622ec`。最近交付：深色模式切换（916f742）、模型保存双提示/Chrome 密码提示/
-  Word 图片 alt 路径修复（9520dd9）、Word 导入改用 convertToHtml 保真（76622ec）。
+- 当前版本 v20260811.001（`src/config.ts` 的 `APP_VERSION`，每日重置，发布时手动 +1），线上 https://wwwx.eu.cc 运行中。
+- 本地与远端同步于 `5a66f45`。最近交付：窄屏响应式（<1100px 三栏纵向堆叠）、深色模式切换、
+  模型保存双提示/Chrome 密码提示/Word 图片 alt 路径修复、Word 导入改用 convertToHtml 保真、
+  富文本/预览标题栏窄屏自适应分行。
 - 已知：`npm audit` 报 9 个漏洞（3 moderate / 6 high，依赖上游现状，未处理）；Word 导入的
   右对齐为已知限制（AI 排版会主题化重排，暂不处理）。

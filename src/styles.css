@@ -188,6 +188,34 @@ body {
   --gzh-max-width: 390px;
 }
 
+/* ─── 窄屏（<1100px）：三栏由横排切换为纵向堆叠，每栏全宽，消除横向滚动 ─── */
+@media (max-width: 1100px) {
+  .app-shell {
+    min-width: 0; /* 取消 990px 最小总宽，不再强制横向滚动 */
+    overflow-x: hidden;
+  }
+  .app-shell-proto {
+    flex-direction: column;
+  }
+  .app-shell-proto > aside,
+  .app-shell-proto > main {
+    flex: none;
+    height: 70vh; /* 每栏约一屏高，编辑器有可用高度，页面整体滚动浏览 */
+    min-height: 480px;
+    min-width: 100%;
+    border-left: none;
+  }
+  .app-shell-proto > aside + aside,
+  .app-shell-proto > main + aside,
+  .app-shell-proto > aside + main {
+    border-left: none;
+    border-top: 1px solid var(--semi-color-border);
+  }
+  .app-shell-proto > .app-preview {
+    min-width: 100%;
+  }
+}
+
 .app-shell-proto > aside + aside,
 .app-shell-proto > main + aside,
 .app-shell-proto > aside + main {
