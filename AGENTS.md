@@ -16,11 +16,13 @@ npm run build:assets # 仅当更新 skill 资产时重新打包 worker-lib/skill
 
 ## 技术栈
 Vite + React 18 + TypeScript(strict) · Semi Design(`@douyinfe/semi-ui`) · Cloudflare Pages
-Functions(TS) · wrangler · mammoth.js(Word 解析) · jszip。Node ≥ 22（CI 用 22，本地实测 24 可用）。
+Functions(TS) · wrangler · mammoth.js(Word 解析) · jszip · color(深色模式颜色计算)。
+Node ≥ 22（CI 用 22，本地实测 24 可用）。
 
 ## 目录与约定
-- `src/` 前端：`App.tsx` 三栏编排；`components/` 各面板；`lib/` 工具；`config.ts` 存
-  `APP_VERSION`（发布时手动 +1）与 `REPO_URL`（AGPL 源码链接）。
+- `src/` 前端：`App.tsx` 三栏编排；`components/` 各面板；`lib/` 工具
+  （含 `lib/darkmode/`：mp-darkmode 移植的深色模式算法，PreviewPanel 提供亮/暗切换）；
+  `config.ts` 存 `APP_VERSION`（发布时手动 +1）与 `REPO_URL`（AGPL 源码链接）。
 - `functions/api/` Pages Functions（备用/校验；`upload.ts` 已废弃 DEPRECATED）。
 - `worker-lib/` Worker 共享逻辑，含**随仓库提交**的 `skillAssets.ts`（CI 不重新生成）。
 - `scripts/build-assets.mjs` 打包 skill 资产。
@@ -30,5 +32,7 @@ Functions(TS) · wrangler · mammoth.js(Word 解析) · jszip。Node ≥ 22（CI
 
 ## 当前状态与下一步
 - 当前版本 v20260806.010（`src/config.ts` 的 `APP_VERSION`），线上 https://wwwx.eu.cc 运行中。
-- 本地与远端同步于 `8f05c83`（修复 typecheck 类型错误）。
-- 已知：`npm audit` 报 9 个漏洞（3 moderate / 6 high，依赖上游现状，未处理）。
+- 本地与远端同步于 `76622ec`。最近交付：深色模式切换（916f742）、模型保存双提示/Chrome 密码提示/
+  Word 图片 alt 路径修复（9520dd9）、Word 导入改用 convertToHtml 保真（76622ec）。
+- 已知：`npm audit` 报 9 个漏洞（3 moderate / 6 high，依赖上游现状，未处理）；Word 导入的
+  右对齐为已知限制（AI 排版会主题化重排，暂不处理）。
