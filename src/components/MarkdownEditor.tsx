@@ -28,14 +28,16 @@ export default function MarkdownEditor({ value, onChange, imgbbKey, imgbbExpiry,
       <div
         style={{
           display: 'flex',
+          flexWrap: 'wrap',
           justifyContent: 'space-between',
           alignItems: 'center',
+          rowGap: 4,
           marginBottom: 8,
           padding: '0 4px',
         }}
       >
-        <Text strong>Markdown 编辑器</Text>
-        <Text type="tertiary" size="small">可二次编辑 · 约 {countWords(value)} 字</Text>
+        <Text strong style={{ flexShrink: 0 }}>Markdown 编辑器</Text>
+        <Text type="tertiary" size="small" style={{ flexShrink: 0 }}>可二次编辑 · 约 {countWords(value)} 字</Text>
       </div>
 
       <EditorToolbar

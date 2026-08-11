@@ -216,6 +216,51 @@ body {
   }
 }
 
+/* ─── 手机端（<480px）：header 单行图标化 / 弹窗全宽 ─────────────────── */
+@media (max-width: 480px) {
+  .app-header {
+    padding: 0 10px;
+    height: 52px;
+  }
+  .app-logo {
+    gap: 4px;
+  }
+  /* logo 只留 SVG 图标，隐藏站点名与版本号 */
+  .app-logo-text,
+  .app-header .header-version {
+    display: none;
+  }
+  /* 文字按钮只剩图标（排版历史/Star/图片API/模型API） */
+  .header-btn-text {
+    display: none;
+  }
+  /* 模型下拉只留头像 */
+  .model-select-label,
+  .model-select-arrow {
+    display: none;
+  }
+  .model-select-trigger {
+    padding: 0 6px !important;
+  }
+  .header-action-btn {
+    padding: 0 6px !important;
+  }
+  .theme-color-switches {
+    gap: 3px;
+  }
+  .theme-swatch {
+    width: 13px;
+    height: 13px;
+  }
+
+  /* Semi Modal 手机端全宽（模型/图片API/主题向导/历史预览统一适配） */
+  .semi-modal {
+    width: calc(100vw - 32px) !important;
+    max-width: calc(100vw - 32px) !important;
+    margin: 0 auto !important;
+  }
+}
+
 .app-shell-proto > aside + aside,
 .app-shell-proto > main + aside,
 .app-shell-proto > aside + main {

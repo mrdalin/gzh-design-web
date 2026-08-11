@@ -776,8 +776,8 @@ export default function App() {
               </linearGradient>
             </defs>
           </svg>
-          微信公众号 AI 排版
-          <Text type="tertiary" size="small" style={{ opacity: 0.4, userSelect: 'none', fontWeight: 400, fontSize: 11, marginLeft: 6 }}>
+          <span className="app-logo-text">微信公众号 AI 排版</span>
+          <Text className="header-version" type="tertiary" size="small" style={{ opacity: 0.4, userSelect: 'none', fontWeight: 400, fontSize: 11, marginLeft: 6 }}>
             v{APP_VERSION}
           </Text>
         </div>
@@ -856,18 +856,20 @@ export default function App() {
                   return sel ? modelLabel(sel) : '选择模型';
                 })()}
               </span>
-              <IconChevronDown />
+              <span className="model-select-arrow">
+                <IconChevronDown />
+              </span>
             </Button>
           </Dropdown>
           {history.length > 0 ? (
             <Badge count={history.length} overflowCount={99} type="primary">
               <Button className="header-action-btn" icon={<IconHistory />} onClick={() => setHistoryVisible(true)}>
-                排版历史
+                <span className="header-btn-text">排版历史</span>
               </Button>
             </Badge>
           ) : (
             <Button className="header-action-btn" icon={<IconHistory />} onClick={() => setHistoryVisible(true)}>
-              排版历史
+              <span className="header-btn-text">排版历史</span>
             </Button>
           )}
           {REPO_URL && (
@@ -877,21 +879,23 @@ export default function App() {
               onClick={() => window.open(REPO_URL, '_blank')}
               aria-label="在 GitHub 上 Star 本项目"
             >
-              Star
-              {starCount != null && starCount > 0 &&
-                (starCount >= 1000
-                  ? ` ${(starCount / 1000).toFixed(1).replace(/\.0$/, '')}k`
-                  : ` ${starCount}`)}
+              <span className="header-btn-text">
+                Star
+                {starCount != null && starCount > 0 &&
+                  (starCount >= 1000
+                    ? ` ${(starCount / 1000).toFixed(1).replace(/\.0$/, '')}k`
+                    : ` ${starCount}`)}
+              </span>
             </Button>
           )}
           <Badge dot={!imgbbKey?.trim()} type="danger" position="rightTop">
             <Button className="header-action-btn" icon={<IconImage />} onClick={() => setImgbbVisible(true)}>
-              图片 API
+              <span className="header-btn-text">图片 API</span>
             </Button>
           </Badge>
           <Badge dot={!models.some(isModelConfigured)} type="danger" position="rightTop">
             <Button className="header-action-btn" icon={<IconSetting />} onClick={() => setModelVisible(true)}>
-              模型 API
+              <span className="header-btn-text">模型 API</span>
             </Button>
           </Badge>
         </Space>
