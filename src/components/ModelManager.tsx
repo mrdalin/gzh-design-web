@@ -80,8 +80,9 @@ export default function ModelManager({
     }
     onChange(nextModels);
     saveModels(nextModels);
-    // 若「保存并使用」或当前没有可用的（已配置）模型，则保存后自动设为「使用中」
-    const current = models.find((m) => m.id === selectedId);
+    // 若「保存并使用」或当前没有可用的（已配置）模型，则保存后自动设为「使用中」。
+    // 用 nextModels 判断（models prop 是旧值，刚保存的模型还没进来）。
+    const current = nextModels.find((m) => m.id === selectedId);
     const shouldSelect = useAfter || !current || !isModelConfigured(current);
     if (shouldSelect) {
       onSelect(editingId || next.id);
@@ -198,6 +199,7 @@ export default function ModelManager({
         <Input
           placeholder="API KEY"
           type="password"
+          autoComplete="new-password"
           value={draft.apiKey}
           onChange={(v) => updateField('apiKey', v)}
           style={{ marginBottom: 10 }}

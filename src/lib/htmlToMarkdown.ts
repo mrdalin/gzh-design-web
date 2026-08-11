@@ -1,3 +1,5 @@
+import { cleanImageAlt } from './imageSanitize';
+
 function escapeMd(text: string): string {
   return text.replace(/([*_`\[\]\\])/g, '\\$1');
 }
@@ -56,7 +58,7 @@ function convertNode(node: Node, listDepth = 0): string {
       }
       case 'img': {
         const src = el.getAttribute('src') || '';
-        const alt = el.getAttribute('alt') || '';
+        const alt = cleanImageAlt(el.getAttribute('alt'));
         return '![' + alt + '](' + src + ')';
       }
       case 'ul': {

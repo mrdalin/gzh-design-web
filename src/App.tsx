@@ -27,7 +27,7 @@ import { ModelAvatar, isModelConfigured, modelLabel } from './modelIcons';
 import { fetchThemes, layoutClientSideStream, liveClean, generateArticle, uploadImageB64 } from './lib/api';
 import { htmlToMarkdown } from './lib/htmlToMarkdown';
 import { markdownToHtml } from './lib/markdownToHtml';
-import { PLACEHOLDER_IMG, sanitizeHtmlImages, sanitizeMdImages } from './lib/imageSanitize';
+import { PLACEHOLDER_IMG, sanitizeHtmlImages, sanitizeMdImages, cleanImageAlt } from './lib/imageSanitize';
 import { useScrollSync } from './lib/useScrollSync';
 import { countWords } from './lib/wordCount';
 import mammoth from 'mammoth';
@@ -457,6 +457,12 @@ export default function App() {
         return;
       }
 
+      // 清洗 mammoth 带出的原始图片 alt（如 C:\...\效果图3.jpg 这类本地路径/文件名），
+      // 只保留文件名（去扩展名）；空 alt 用默认「图片」。
+      md = md.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_m, alt: string, url: string) => {
+        return `![${cleanImageAlt(alt)}](${url})`;
+      });
+
       // Markdown 区用占位符替代巨大的 base64 dataURL（富文本区仍保留 dataURL 预览图）。
       // 占位格式：![图片 N（上传中…）](#pending) —— 短小清晰，finish() 时替换为真实 URL。
       let imgIdx = 0;
@@ -743,11 +749,14 @@ export default function App() {
       setModelVisible(true);
       return;
     }
-    const m = models.find((x) => x.id === id);
+    // models state 在保存流程(刚保存尚未 re-render)中可能滞后,
+    // 且 saveDraft 内 saveModels(nextModels) 已在 onSelect 前写入 localStorage,
+    // 故 fallback 到 loadModels 确保拿到最新数据,避免刚保存的模型被误判为未配置。
+    const latest = models.find((x) => x.id === id) || loadModels().find((x) => x.id === id);
     setSelectedModelId(id);
     saveLastModelId(id);
     // 选中了未配置（缺 API Key）的模型：提示并打开模型管理，引导填写
-    if (m && !isModelConfigured(m)) {
+    if (latest && !isModelConfigured(latest)) {
       Toast.info('该模型尚未配置 API Key，请先点击 编辑 填写后使用');
       setModelVisible(true);
     }

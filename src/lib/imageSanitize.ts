@@ -42,3 +42,15 @@ export function sanitizeHtmlImages(html: string): string {
     }
   );
 }
+
+// 图片 alt 清洗：Word/mammoth 会带出原始本地路径或文件名（如 C:\Users\...\效果图3.jpg），
+// 统一只保留最后一段文件名并去掉扩展名（非路径的说明文字原样保留）；空 alt 给默认「图片」。
+export function cleanImageAlt(alt: string | undefined | null): string {
+  const a = (alt || '').trim();
+  if (!a) return '图片';
+  // 取路径最后一段（兼容 / 与 \）
+  const seg = a.split(/[\\/]/).pop() || a;
+  // 去掉图片扩展名；若去掉后为空（如 alt 本身就是 ".png"）则保留原样
+  const cleaned = seg.replace(/\.(png|jpe?g|gif|bmp|webp|svg|ico|avif)$/i, '').trim();
+  return cleaned || a;
+}
