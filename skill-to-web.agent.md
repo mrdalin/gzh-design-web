@@ -16,8 +16,12 @@ Cloudflare Pages（静态前端 dist + Pages Functions）
    第三方服务（LLM、图床、API…）经 Worker 代理，规避 CORS、保护 Key
 ```
 
-**为什么需要 Worker 代理**：浏览器直连第三方有 CORS 且会暴露 Key；Worker 在服务端转发，
-Key 由用户 localStorage 随请求带上来、用完即弃、不持久化。
+**两种密钥/请求模式（按第三方是否开放浏览器直连 CORS 选择）**：
+- **客户端 BYOK 直连（本项目现役主路径，见 README「架构说明」）**：浏览器直接调用第三方
+  （OpenAI 兼容 LLM 的 SSE 流式 API / imgbb 图床），Key 只存 localStorage、随请求发出、不落服务端。
+  优点：绕开 Cloudflare Pages Functions 的 ~30s CPU 时间限制，流式预览体验最好；前提是第三方开放 CORS。
+- **Worker 代理（备用/受限路径）**：浏览器经 `/api/*` 转发第三方，规避 CORS、Key 由用户
+  localStorage 随请求带上来、用完即弃、不持久化。适用于第三方未开放 CORS 的场景。
 
 ## 二、标准技术栈
 
@@ -57,6 +61,8 @@ Key 由用户 localStorage 随请求带上来、用完即弃、不持久化。
 - `functions/api/{主功能,themes,upload,...}.ts`，每个导出 `onRequestPost` / `onRequestOptions`（CORS）。
 - 用 `Response.json(data, { headers: { 'Access-Control-Allow-Origin': '*' } })`。
 - LLM 调用走 OpenAI 兼容 `chatCompletion`。
+- **现役主路径**：本项目最终改为前端直连 LLM（SSE 流式）+ 浏览器直连 imgbb（BYOK），
+  Functions 仅保留备用/校验（如 `/api/postprocess`）。若第三方开放 CORS，优先直连以绕开 CF 30s 限制。
 - 若需强制合规校验（如公众号约束），在返回前跑 `validate` 并做一次自动纠正重试。
 
 ### 5. 前端
