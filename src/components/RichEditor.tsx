@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Button, Space, Toast, Tooltip, Typography } from '@douyinfe/semi-ui';
+import { Button, Toast, Tooltip, Typography } from '@douyinfe/semi-ui';
 import {
   IconBold,
   IconItalic,
@@ -239,14 +239,27 @@ export default function RichEditor({ html, onChange, imgbbKey, imgbbExpiry, disa
       <div
         style={{
           display: 'flex',
-          justifyContent: 'space-between',
+          flexWrap: 'wrap',
           alignItems: 'center',
+          justifyContent: 'space-between',
+          rowGap: 4,
           marginBottom: 8,
           padding: '0 4px',
         }}
       >
-        <Text strong>富文本文案内容书写编辑区</Text>
-        <Space spacing={8} style={{ alignItems: 'center' }}>
+        <Text strong style={{ flexShrink: 0 }}>
+          富文本文案内容书写编辑区
+        </Text>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            rowGap: 4,
+            columnGap: 8,
+            flexShrink: 0,
+          }}
+        >
           {onDocxFile && (
             <Button
               size="small"
@@ -272,7 +285,7 @@ export default function RichEditor({ html, onChange, imgbbKey, imgbbExpiry, disa
           <Text type="tertiary" size="small">
             支持 Word 带格式粘贴 · 约 {countWords(html)} 字
           </Text>
-        </Space>
+        </div>
       </div>
 
       <div

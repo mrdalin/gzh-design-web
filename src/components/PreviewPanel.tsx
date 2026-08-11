@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Button, Space, Toast, Typography, Spin, Modal } from '@douyinfe/semi-ui';
+import { Button, Toast, Typography, Spin, Modal } from '@douyinfe/semi-ui';
 import {
   IconCopy,
   IconDownload,
@@ -264,18 +264,29 @@ export default function PreviewPanel({
       <div
         style={{
           display: 'flex',
+          flexWrap: 'wrap',
           alignItems: 'center',
           justifyContent: 'space-between',
+          rowGap: 6,
           padding: '10px 12px',
           borderBottom: '1px solid var(--semi-color-border)',
           background: 'var(--semi-color-bg-1)',
           flexShrink: 0,
         }}
       >
-        <Title heading={6} style={{ margin: 0 }}>
+        <Title heading={6} style={{ margin: 0, flexShrink: 0 }}>
           手机预览 · 约 {countWords(shownHtml)} 字
         </Title>
-        <Space>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            rowGap: 6,
+            columnGap: 4,
+            flexShrink: 0,
+          }}
+        >
           <Button theme="borderless" onClick={toggleDark} disabled={!!loading || !html}>
             {previewDark ? '☀️ 亮色' : '🌙 深色'}
           </Button>
@@ -288,7 +299,7 @@ export default function PreviewPanel({
           <Button theme="light" icon={<IconImage />} onClick={() => setShotVisible(true)} disabled={!html}>
             截图导出
           </Button>
-        </Space>
+        </div>
       </div>
 
       <div
