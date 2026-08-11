@@ -433,13 +433,9 @@ export default function App() {
         return { src: preview };
       });
 
-      // mammoth 类型声明缺少 convertToMarkdown（运行时存在），此处显式断言其签名
-      const mdResult = await (mammoth as unknown as {
-        convertToMarkdown: (
-          input: { arrayBuffer: ArrayBuffer },
-          options?: Parameters<typeof mammoth.convertToHtml>[1]
-        ) => Promise<{ value: string; messages: unknown[] }>;
-      }).convertToMarkdown({ arrayBuffer }, {
+      // Word 导入用 convertToHtml 输出保真 HTML（加粗/标题/列表等真实标签），
+      // 富文本区直接显示；Markdown 区由 htmlToMarkdown 转换（双向同步一致）。
+      const htmlResult = await mammoth.convertToHtml({ arrayBuffer }, {
         convertImage,
         styleMap: [
           "b[style-name='Heading 1'] => h1:fresh",
@@ -447,7 +443,9 @@ export default function App() {
           "b[style-name='Heading 3'] => h3:fresh",
         ],
       });
-      md = mdResult.value.trim();
+      const rawHtml = htmlResult.value.trim();
+      // 转 Markdown 供 Markdown 编辑器使用
+      md = htmlToMarkdown(rawHtml);
       if (!md) {
         setWordParsing(false);
         setWordUploadProgress(null);
@@ -478,17 +476,17 @@ export default function App() {
         setWordUploadProgress({ current: 0, total: totalImages });
       }
 
-      // 同时更新 Markdown 区（占位符版）和富文本区（dataURL 预览版）
+      // 同时更新 Markdown 区（占位符版）和富文本区（直接显示 convertToHtml 保真 HTML）
       syncingFromRich.current = true;
       setArticle(cleanMd);
-      setRichHtml(markdownToHtml(md));
+      setRichHtml(rawHtml);
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           syncingFromRich.current = false;
         });
       });
-      if (mdResult.messages.length > 0) {
-        console.log('[Word 解析警告]', mdResult.messages);
+      if (htmlResult.messages.length > 0) {
+        console.log('[Word 解析警告]', htmlResult.messages);
       }
       // 等富文本 DOM 渲染后再补图；无图片或无需上传则直接收尾
       requestAnimationFrame(() => {

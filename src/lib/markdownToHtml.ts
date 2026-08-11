@@ -10,6 +10,8 @@ function inlineMd(text: string): string {
   text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
   // 加粗 **x**
   text = text.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>');
+  // 加粗 __x__(mammoth 的 markdown 输出风格,Word 导入时会出现)
+  text = text.replace(/__([^_]+?)__/g, '<strong>$1</strong>');
   // 斜体 *x*
   text = text.replace(/\*([^*]+?)\*/g, '<em>$1</em>');
   // 删除线 ~~x~~
