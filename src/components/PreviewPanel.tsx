@@ -8,6 +8,7 @@ import {
   IconSend,
 } from '@douyinfe/semi-icons';
 import JSZip from 'jszip';
+import { applyDark, applyLight } from '../lib/darkmode';
 import type { ValidationResult } from '../types';
 import { copyRichText } from '../lib/clipboard';
 import { countWords } from '../lib/wordCount';
@@ -118,6 +119,7 @@ export default function PreviewPanel({
   const internalScrollRef = useRef<HTMLDivElement | null>(null);
   const [shotVisible, setShotVisible] = useState(false);
   const [capturing, setCapturing] = useState(false);
+  const [previewDark, setPreviewDark] = useState(false);
 
   const shownHtml = loading && stream ? stream.partial : html;
 
@@ -129,7 +131,36 @@ export default function PreviewPanel({
     }
   }, [loading, stream, stream?.partial]);
 
+  // 生成新排版(html 变化)时回到亮色:新内容需重新转换,避免残留旧暗色样式
+  useEffect(() => {
+    if (previewDark && frameRef.current) {
+      applyLight(frameRef.current);
+      setPreviewDark(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [html]);
+
+  // 复制/导出/截图前自动恢复亮色:公众号后台为亮色,暗色样式不应进入产出物
+  function ensureLight() {
+    if (previewDark && frameRef.current) {
+      applyLight(frameRef.current);
+      setPreviewDark(false);
+    }
+  }
+
+  function toggleDark() {
+    if (!frameRef.current) return;
+    if (previewDark) {
+      applyLight(frameRef.current);
+      setPreviewDark(false);
+    } else {
+      applyDark(frameRef.current);
+      setPreviewDark(true);
+    }
+  }
+
   async function handleCopy() {
+    ensureLight();
     if (!html) {
       Toast.warning('还没有可复制的内容');
       return;
@@ -143,6 +174,7 @@ export default function PreviewPanel({
   }
 
   function exportHtml() {
+    ensureLight();
     if (!html) {
       Toast.warning('还没有可导出的内容');
       return;
@@ -157,6 +189,7 @@ export default function PreviewPanel({
 
   async function captureLongImage() {
     if (!frameRef.current) return;
+    ensureLight();
     setCapturing(true);
     try {
       const dataUrl = await toPng(frameRef.current, {
@@ -175,6 +208,7 @@ export default function PreviewPanel({
 
   async function captureSegmentedImages() {
     if (!frameRef.current) return;
+    ensureLight();
     setCapturing(true);
     try {
       const canvas = await toCanvas(frameRef.current, {
@@ -242,6 +276,9 @@ export default function PreviewPanel({
           手机预览 · 约 {countWords(shownHtml)} 字
         </Title>
         <Space>
+          <Button theme="borderless" onClick={toggleDark} disabled={!!loading || !html}>
+            {previewDark ? '☀️ 亮色' : '🌙 深色'}
+          </Button>
           <Button theme="solid" icon={<IconCopy />} onClick={handleCopy} disabled={!html}>
             复制排版
           </Button>
