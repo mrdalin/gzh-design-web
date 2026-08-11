@@ -30,10 +30,13 @@ Node ≥ 22（CI 用 22，本地实测 24 可用）。
   项目名 `gzh-design-web`；凭证只存 Actions secrets。
 - 提交信息用中文 conventional 风格（fix:/feat:/docs:/chore:）。
 
+## ⚠️ 发布必做（每次 push main 之前逐条检查，漏项即违规）
+1. **APP_VERSION 必须 +1**：`src/config.ts` 的 `APP_VERSION` 每次发布都递增（同日序号 +1，跨日重置为当天日期 `.001`）——这是用户明确要求的强约束，历史上已漏过 2 次。
+2. README「更新历程」表补一行本次版本的关键改动；稳定锚点「当前最新功能版」同步到新版本与 commit。
+3. `npm run typecheck` 零错误 + `npm run build` 成功。
+
 ## 当前状态与下一步
-- 当前版本 v20260811.001（`src/config.ts` 的 `APP_VERSION`，每日重置，发布时手动 +1），线上 https://wwwx.eu.cc 运行中。
-- 本地与远端同步于 `5a66f45`。最近交付：窄屏响应式（<1100px 三栏纵向堆叠）、深色模式切换、
-  模型保存双提示/Chrome 密码提示/Word 图片 alt 路径修复、Word 导入改用 convertToHtml 保真、
-  富文本/预览标题栏窄屏自适应分行。
+- 当前版本 v20260811.002（`src/config.ts` 的 `APP_VERSION`，每日重置，发布时手动 +1），线上 https://wwwx.eu.cc 运行中。
+- 本地与远端同步于 `afd792e`（版本号补升至 20260811.002，对应手机端兼容优化）。最近交付：窄屏响应式（<1100px 三栏纵向堆叠）、手机端兼容（<480px header 单行图标化 + Modal 全宽）、深色模式切换、模型保存双提示/Chrome 密码提示/Word 图片 alt 路径修复、Word 导入改用 convertToHtml 保真、富文本/预览/Markdown 标题栏自适应分行。
 - 已知：`npm audit` 报 9 个漏洞（3 moderate / 6 high，依赖上游现状，未处理）；Word 导入的
   右对齐为已知限制（AI 排版会主题化重排，暂不处理）。

@@ -159,7 +159,8 @@ scripts/            build-assets.mjs（打包 skill 资产）
     ```bash
     git checkout v20260806.004   # 检出后重新构建部署即可
     ```
-  - `v20260811.001`（commit `5a66f45`，**当前最新功能版**，版本号见 `src/config.ts` 的 `APP_VERSION`）：窄屏响应式优化——窗口 <1100px 时三栏由横排切换为纵向堆叠（消除横向滚动）；同日还含深色模式预览切换、模型保存双提示/Chrome 密码提示/Word 图片 alt 路径修复、Word 导入改用 convertToHtml 保真。
+  - `v20260811.002`（commit `afd792e`，**当前最新功能版**，版本号见 `src/config.ts` 的 `APP_VERSION`）：手机端兼容优化——<480px 时 header 单行图标化（按钮只留图标、logo 只留 SVG、下拉只留头像）、Semi Modal 全宽、Markdown 编辑器标题栏自适应分行。
+  - `v20260811.001`（commit `5a66f45`）：窄屏响应式优化——窗口 <1100px 时三栏由横排切换为纵向堆叠（消除横向滚动）；同日还含深色模式预览切换、模型保存双提示/Chrome 密码提示/Word 图片 alt 路径修复、Word 导入改用 convertToHtml 保真。
   - `v20260806.010`（commit `062bac9`）：空态手机框撑满预览区高度（三栏布局重构 v006→v010 的最终形态）。
   - `v20260806.009`（commit `cdb14da`）：去掉手机框内部滚动条，滚动统一交给右栏舞台。
   - `v20260806.008`（commit `8c6eb7b`）：手机外框改细边浅色、自然高度。
@@ -231,6 +232,7 @@ scripts/            build-assets.mjs（打包 skill 资产）
 | v20260806.009 | 去掉手机框内部独立滚动条：内容自然撑高手机外框，滚动统一交给右侧 `.preview-stage` 大滚动区；同步将 `scrollRef` 挂到舞台层，保持三栏滚动同步与流式生成自动滚底 |
 | v20260806.010 | 空态手机框撑满预览区：`.phone-bezel` 空态时 `min-height:100%` 占满 `.preview-stage` 内容高度（上下由 stage padding 留白），`.phone-screen` 改 `flex:1` 填充剩余；有内容时仍自然撑高，不恢复内部滚动条 |
 | v20260811.001 | 窄屏响应式优化（窗口 <1100px 时三栏由横排切换为纵向堆叠、每栏全宽，消除横向滚动）；深色模式预览切换（移植 wechatjs/mp-darkmode 算法）；修复模型保存双提示、Chrome 保存密码误提示、Word 图片 alt 带本地路径；Word 导入改用 convertToHtml 保真（富文本区显示真实加粗/标题样式）；富文本/预览标题栏窄屏自适应分行 |
+| v20260811.002 | 手机端兼容优化：<480px 时 header 单行图标化（按钮文字隐藏只留图标、logo 只留 SVG、模型下拉只留头像）、Semi Modal 全宽（`width: calc(100vw - 32px)`）、Markdown 编辑器标题栏自适应分行 |
 
 > 每个版本均经真实浏览器（Chromium）挂载验证（无白屏、无报错）后，由 GitHub Actions 自动部署到 Cloudflare Pages。
 
