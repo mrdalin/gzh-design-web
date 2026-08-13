@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Modal,
   Button,
@@ -10,6 +10,7 @@ import {
   Divider,
   Spin,
   Radio,
+  Tag,
 } from '@douyinfe/semi-ui';
 import { IconChevronDown, IconTick, IconSetting, IconImage } from '@douyinfe/semi-icons';
 import type { StoredModel } from '../types';
@@ -48,6 +49,11 @@ export default function CustomThemeWizard({
   // 参考图 dataURL（压缩后），用于直连模型
   const [imageDataUrl, setImageDataUrl] = useState('');
   const [imgProcessing, setImgProcessing] = useState(false);
+
+  // 每次打开时同步最新选中的模型（组件常驻，visible 由外部控制）
+  useEffect(() => {
+    if (visible) setModelId(selectedModelId);
+  }, [visible, selectedModelId]);
 
   function composePrefs(): string {
     return [
@@ -208,7 +214,11 @@ export default function CustomThemeWizard({
             accept="image/*"
             style={{ display: 'none' }}
             id="theme-ref-image-input"
-            onChange={(e) => handleImageFile(e.target.files?.[0] ?? null)}
+            onChange={(e) => {
+              handleImageFile(e.target.files?.[0] ?? null);
+              // 重置 value，允许重复选择同一张图再次触发 onChange
+              e.target.value = '';
+            }}
           />
           <Button
             icon={<IconImage />}
@@ -289,6 +299,7 @@ export default function CustomThemeWizard({
                   >
                     <ModelAvatar model={m} size={26} />
                     <span className="model-dropdown-name">{modelLabel(m)}</span>
+                    {m.vision && <Tag size="small" color="green" style={{ marginLeft: 6 }}>视觉</Tag>}
                     {active && (
                       <IconTick
                         style={{ marginLeft: 'auto', color: 'var(--gzh-accent)', flexShrink: 0 }}
