@@ -11,8 +11,6 @@ import {
   Spin,
   Radio,
   Tag,
-  Tabs,
-  TabPane,
 } from '@douyinfe/semi-ui';
 import { IconChevronDown, IconTick, IconSetting, IconImage } from '@douyinfe/semi-icons';
 import type { StoredModel } from '../types';
@@ -183,18 +181,26 @@ export default function CustomThemeWizard({
         生成后点「应用此主题」，它会出现在左侧主题里，生成排版时会自动套用这套风格。
       </Paragraph>
 
-      <Tabs
-        type="line"
-        activeKey={mode}
-        onChange={(k: any) => {
-          const v = k === 'image' ? 'image' : 'text';
+      <Radio.Group
+        type="button"
+        value={mode}
+        onChange={(e: any) => {
+          const v = e?.target?.value ?? e;
           setMode(v);
           if (v === 'text') setImageDataUrl('');
         }}
-        style={{ marginBottom: 12 }}
+        style={{ width: '100%', display: 'flex', marginBottom: 16 }}
       >
-        {/* 一级 Tab 1：文字描述生成主题 */}
-        <TabPane tab="文字描述生成主题" itemKey="text">
+        <Radio value="text" style={{ flex: 1, textAlign: 'center' }}>
+          文字描述生成主题
+        </Radio>
+        <Radio value="image" style={{ flex: 1, textAlign: 'center' }}>
+          上传参考图生成主题
+        </Radio>
+      </Radio.Group>
+
+      {mode === 'text' ? (
+        <div>
           <Paragraph type="secondary" size="small" style={{ margin: '0 0 12px' }}>
             描述你想要的视觉风格，AI 会生成一整套区块库（标题、引用、卡片、列表等）供你整页预览确认。
           </Paragraph>
@@ -222,62 +228,59 @@ export default function CustomThemeWizard({
               onChange={(v) => setColor(v)}
             />
           </Space>
-        </TabPane>
-
-        {/* 一级 Tab 2：上传参考图生成主题 */}
-        <TabPane tab="上传参考图生成主题" itemKey="image">
-          <div
-            style={{
-              marginBottom: 12,
-              border: '1px dashed var(--semi-color-border)',
-              borderRadius: 8,
-              padding: 16,
-              textAlign: 'center',
-              background: 'var(--semi-color-fill-0)',
+        </div>
+      ) : (
+        <div
+          style={{
+            marginBottom: 12,
+            border: '1px dashed var(--semi-color-border)',
+            borderRadius: 8,
+            padding: 16,
+            textAlign: 'center',
+            background: 'var(--semi-color-fill-0)',
+          }}
+        >
+          <Paragraph type="secondary" size="small" style={{ margin: '0 0 12px' }}>
+            上传一张参考图，模型会自动分析配色、风格、场景等信息，生成完整主题
+          </Paragraph>
+          <input
+            type="file"
+            accept="image/*"
+            style={{ display: 'none' }}
+            id="theme-ref-image-input"
+            onChange={(e) => {
+              handleImageFile(e.target.files?.[0] ?? null);
+              // 重置 value，允许重复选择同一张图再次触发 onChange
+              e.target.value = '';
             }}
+          />
+          <Button
+            icon={<IconImage />}
+            theme="light"
+            onClick={() => document.getElementById('theme-ref-image-input')?.click()}
+            disabled={imgProcessing}
           >
-            <Paragraph type="secondary" size="small" style={{ margin: '0 0 12px' }}>
-              上传一张参考图，模型会自动分析配色、风格、场景等信息，生成完整主题
-            </Paragraph>
-            <input
-              type="file"
-              accept="image/*"
-              style={{ display: 'none' }}
-              id="theme-ref-image-input"
-              onChange={(e) => {
-                handleImageFile(e.target.files?.[0] ?? null);
-                // 重置 value，允许重复选择同一张图再次触发 onChange
-                e.target.value = '';
-              }}
-            />
-            <Button
-              icon={<IconImage />}
-              theme="light"
-              onClick={() => document.getElementById('theme-ref-image-input')?.click()}
-              disabled={imgProcessing}
-            >
-              {imgProcessing ? '正在处理图片…' : imageDataUrl ? '重新选择图片' : '选择参考图'}
-            </Button>
-            {imageDataUrl && (
-              <div style={{ marginTop: 12 }}>
-                <img
-                  src={imageDataUrl}
-                  alt="参考图预览"
-                  style={{ maxWidth: 240, maxHeight: 180, borderRadius: 8, border: '1px solid var(--semi-color-border)' }}
-                />
-              </div>
-            )}
-            {(() => {
-              const m = currentModel();
-              return m && !m.vision ? (
-                <Text type="tertiary" size="small" style={{ display: 'block', marginTop: 8 }}>
-                  ⚠️ 当前模型未勾选「支持图片」，生成前请到「模型管理」勾选
-                </Text>
-              ) : null;
-            })()}
-          </div>
-        </TabPane>
-      </Tabs>
+            {imgProcessing ? '正在处理图片…' : imageDataUrl ? '重新选择图片' : '选择参考图'}
+          </Button>
+          {imageDataUrl && (
+            <div style={{ marginTop: 12 }}>
+              <img
+                src={imageDataUrl}
+                alt="参考图预览"
+                style={{ maxWidth: 240, maxHeight: 180, borderRadius: 8, border: '1px solid var(--semi-color-border)' }}
+              />
+            </div>
+          )}
+          {(() => {
+            const m = currentModel();
+            return m && !m.vision ? (
+              <Text type="tertiary" size="small" style={{ display: 'block', marginTop: 8 }}>
+                ⚠️ 当前模型未勾选「支持图片」，生成前请到「模型管理」勾选
+              </Text>
+            ) : null;
+          })()}
+        </div>
+      )}
 
       <Space wrap align="center" style={{ marginBottom: 12 }}>
         <Text>主题名称：</Text>
