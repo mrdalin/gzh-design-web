@@ -56,9 +56,14 @@ export default function ModelManager({
 }: Props) {
   const [draft, setDraft] = useState<StoredModel>(emptyCustom());
   const [editingId, setEditingId] = useState<string | null>(null);
+  // API KEY 是否明文显示（默认隐藏，圆点遮挡；点「显示/隐藏」切换，与 imgbb Key 输入框保持一致）
+  const [showKey, setShowKey] = useState(false);
 
   useEffect(() => {
-    if (visible) setDraft(emptyCustom());
+    if (visible) {
+      setDraft(emptyCustom());
+      setShowKey(false);
+    }
   }, [visible]);
 
   function updateField(field: keyof StoredModel, v: string) {
@@ -95,6 +100,7 @@ export default function ModelManager({
   function editModel(m: StoredModel) {
     setDraft({ ...m });
     setEditingId(m.id);
+    setShowKey(false);
   }
 
   function removeModel(m: StoredModel) {
@@ -200,10 +206,19 @@ export default function ModelManager({
           placeholder="API KEY"
           type="text"
           autoComplete="off"
-          className="key-visually-hidden"
+          className={showKey ? undefined : 'key-visually-hidden'}
           value={draft.apiKey}
           onChange={(v) => updateField('apiKey', v)}
           style={{ marginBottom: 10 }}
+          suffix={
+            <Button
+              theme="borderless"
+              size="small"
+              onClick={() => setShowKey((s) => !s)}
+            >
+              {showKey ? '隐藏' : '显示'}
+            </Button>
+          }
         />
       </div>
       <div className={!draft.model.trim() ? 'input-required' : ''}>
