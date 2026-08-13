@@ -159,7 +159,7 @@ scripts/            build-assets.mjs（打包 skill 资产）
     ```bash
     git checkout v20260806.004   # 检出后重新构建部署即可
     ```
-  - `v20260812.003`（commit 待提交回填，**当前最新功能版**，版本号见 `src/config.ts` 的 `APP_VERSION`）：功能统一——模型 API KEY 输入框增加「显示/隐藏」切换（与 imgbb Key 一致，默认圆点隐藏、可切换明文查看，打开/编辑时重置为隐藏）。
+  - `v20260812.003`（commit `c5070aa`，**当前最新功能版**，版本号见 `src/config.ts` 的 `APP_VERSION`）：功能统一——模型 API KEY 输入框增加「显示/隐藏」切换（与 imgbb Key 一致，默认圆点隐藏、可切换明文查看，打开/编辑时重置为隐藏）。
   - `v20260812.002`（commit `0ee5742`）：API Key 输入框不再触发 Chrome 密码管理器——imgbb Key / 模型 API KEY 由 `type="password"` 改为 `type="text"` + `autoComplete="off"` + CSS `-webkit-text-security` 视觉圆点隐藏，Chrome 不再弹出保存/新建密码建议。
   - `v20260812.001`（commit `3b2a8c0`）：首屏体积优化——Word 解析（mammoth 及依赖）与 ZIP 导出（jszip）改为动态 import 懒加载，主 bundle 1.11MB → 620KB（gzip 325KB → 195KB），低频功能按需异步加载。
   - `v20260811.002`（commit `afd792e`）：手机端兼容优化——<480px 时 header 单行图标化（按钮只留图标、logo 只留 SVG、下拉只留头像）、Semi Modal 全宽、Markdown 编辑器标题栏自适应分行。
