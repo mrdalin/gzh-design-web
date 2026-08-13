@@ -30,7 +30,6 @@ import { markdownToHtml } from './lib/markdownToHtml';
 import { PLACEHOLDER_IMG, sanitizeHtmlImages, sanitizeMdImages, cleanImageAlt } from './lib/imageSanitize';
 import { useScrollSync } from './lib/useScrollSync';
 import { countWords } from './lib/wordCount';
-import mammoth from 'mammoth';
 import {
   loadModels,
   saveModels,
@@ -319,6 +318,9 @@ export default function App() {
     // 解析中状态（受控内联状态条，收尾时由 setWordParsing(false) 可靠关闭，不再依赖 Toast.close）
     setWordParsing(true);
     try {
+      // 懒加载 mammoth(含 bluebird/@xmldom/dingbat 等依赖约 670KB):仅首次上传 Word 时才下载,
+      // 让主 bundle 不携带这些低频解析代码,显著缩小首屏体积。
+      const mammoth = (await import('mammoth')).default;
       const arrayBuffer = await file.arrayBuffer();
 
       // dataURL 预览 → 真实 URL（或失败占位）的映射；上传完成后再回填 DOM

@@ -7,7 +7,6 @@ import {
   IconGridView,
   IconSend,
 } from '@douyinfe/semi-icons';
-import JSZip from 'jszip';
 import { applyDark, applyLight } from '../lib/darkmode';
 import type { ValidationResult } from '../types';
 import { copyRichText } from '../lib/clipboard';
@@ -219,6 +218,8 @@ export default function PreviewPanel({
       const segHeight = Math.round(width * 1.33);
       const totalHeight = canvas.height;
       const count = Math.max(1, Math.ceil(totalHeight / segHeight));
+      // 懒加载 jszip(约 95KB):仅导出「分段贴图 ZIP」时才下载,主 bundle 不携带。
+      const { default: JSZip } = await import('jszip');
       const zip = new JSZip();
       const baseName = makeExportBase(title, themeName);
 

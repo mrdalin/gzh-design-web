@@ -159,7 +159,8 @@ scripts/            build-assets.mjs（打包 skill 资产）
     ```bash
     git checkout v20260806.004   # 检出后重新构建部署即可
     ```
-  - `v20260811.002`（commit `afd792e`，**当前最新功能版**，版本号见 `src/config.ts` 的 `APP_VERSION`）：手机端兼容优化——<480px 时 header 单行图标化（按钮只留图标、logo 只留 SVG、下拉只留头像）、Semi Modal 全宽、Markdown 编辑器标题栏自适应分行。
+  - `v20260812.001`（commit 待部署后回填，**当前最新功能版**，版本号见 `src/config.ts` 的 `APP_VERSION`）：首屏体积优化——Word 解析（mammoth 及依赖）与 ZIP 导出（jszip）改为动态 import 懒加载，主 bundle 1.11MB → 620KB（gzip 325KB → 195KB），低频功能按需异步加载。
+  - `v20260811.002`（commit `afd792e`）：手机端兼容优化——<480px 时 header 单行图标化（按钮只留图标、logo 只留 SVG、下拉只留头像）、Semi Modal 全宽、Markdown 编辑器标题栏自适应分行。
   - `v20260811.001`（commit `5a66f45`）：窄屏响应式优化——窗口 <1100px 时三栏由横排切换为纵向堆叠（消除横向滚动）；同日还含深色模式预览切换、模型保存双提示/Chrome 密码提示/Word 图片 alt 路径修复、Word 导入改用 convertToHtml 保真。
   - `v20260806.010`（commit `062bac9`）：空态手机框撑满预览区高度（三栏布局重构 v006→v010 的最终形态）。
   - `v20260806.009`（commit `cdb14da`）：去掉手机框内部滚动条，滚动统一交给右栏舞台。
@@ -183,7 +184,7 @@ scripts/            build-assets.mjs（打包 skill 资产）
   - `v20260805.026`（commit `d6eb949`）：早期稳定版（3 套界面色、模型下拉显模型名、必填项红框、历史角标等）。
 - 完整变更历程见下方「更新历程」。
 
-### 更新历程（v20260805.006 → v20260811.001）
+### 更新历程（v20260805.006 → v20260812.001）
 
 | 版本 | 关键改动 |
 |------|---------|
@@ -233,6 +234,7 @@ scripts/            build-assets.mjs（打包 skill 资产）
 | v20260806.010 | 空态手机框撑满预览区：`.phone-bezel` 空态时 `min-height:100%` 占满 `.preview-stage` 内容高度（上下由 stage padding 留白），`.phone-screen` 改 `flex:1` 填充剩余；有内容时仍自然撑高，不恢复内部滚动条 |
 | v20260811.001 | 窄屏响应式优化（窗口 <1100px 时三栏由横排切换为纵向堆叠、每栏全宽，消除横向滚动）；深色模式预览切换（移植 wechatjs/mp-darkmode 算法）；修复模型保存双提示、Chrome 保存密码误提示、Word 图片 alt 带本地路径；Word 导入改用 convertToHtml 保真（富文本区显示真实加粗/标题样式）；富文本/预览标题栏窄屏自适应分行 |
 | v20260811.002 | 手机端兼容优化：<480px 时 header 单行图标化（按钮文字隐藏只留图标、logo 只留 SVG、模型下拉只留头像）、Semi Modal 全宽（`width: calc(100vw - 32px)`）、Markdown 编辑器标题栏自适应分行 |
+| v20260812.001 | **首屏体积优化**：Word 解析（mammoth 及 bluebird/@xmldom/dingbat/xmlbuilder 等依赖）与「分段贴图 ZIP 导出」的 jszip 改为**动态 import 懒加载**，仅在用户上传 Word / 导出贴图包时才下载对应 chunk；首屏主 bundle 由 1.11MB 降至约 620KB（gzip 325KB → 195KB），其余体积均转为按需异步 chunk，主界面加载与交互不变 |
 
 > 每个版本均经真实浏览器（Chromium）挂载验证（无白屏、无报错）后，由 GitHub Actions 自动部署到 Cloudflare Pages。
 
