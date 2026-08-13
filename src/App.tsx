@@ -225,7 +225,7 @@ export default function App() {
 
   function handleThemeSelect(id: string) {
     if (id === 'custom' && !customLib) {
-      Toast.info('请先在「自定义主题」里生成一套风格');
+      // 尚未生成过自定义主题：直接打开向导引导生成，不额外弹 Toast
       setWizardVisible(true);
       return;
     }

@@ -33,7 +33,7 @@ const PRESET_API_URLS: Record<string, string> = {
   kimi: 'https://platform.moonshot.cn/console/api-keys',
   'agnes-25-flash': 'https://platform.agnes-ai.cn/settings/apiKeys',
   glm: 'https://open.bigmodel.cn/usercenter/apikeys',
-  qwen: 'https://dashscope.console.aliyun.com/apiKey',
+  qwen: 'https://bailian.console.aliyun.com/?tab=model#/api-key',
 };
 
 // 自定义模型字段固定顺序：显示名称（可选）→ API 地址 → API KEY → 模型名称
@@ -229,9 +229,9 @@ export default function ModelManager({
         onChange={(e: any) => updateField('vision', !!(e?.target?.checked ?? e))}
         style={{ marginBottom: 12 }}
       >
-        <span>支持视觉 / 多模态</span>
+        <span>支持图片</span>
         <Text type="tertiary" size="small" style={{ marginLeft: 6 }}>
-          （参考图生成主题需要视觉模型，勾选后可选作生成模型）
+          （参考图生成主题需要）
         </Text>
       </Checkbox>
       <div className={!draft.model.trim() ? 'input-required' : ''}>

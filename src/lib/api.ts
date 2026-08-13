@@ -599,7 +599,7 @@ export async function generateThemeByImage(
   const data: any = await resp.json();
   const raw = data?.choices?.[0]?.message?.content ?? '';
   if (!raw || !raw.trim()) {
-    throw new Error('模型返回空内容。该模型可能不支持视觉输入，请确认已在模型管理中勾选「支持视觉/多模态」');
+    throw new Error('模型返回空内容。该模型可能不支持图片输入，请确认已在模型管理中勾选「支持图片」');
   }
   let html = String(raw).trim().replace(/^```(?:html)?\s*/i, '').replace(/\s*```$/i, '').trim();
   return { html };
