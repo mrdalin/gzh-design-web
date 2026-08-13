@@ -159,7 +159,8 @@ scripts/            build-assets.mjs（打包 skill 资产）
     ```bash
     git checkout v20260806.004   # 检出后重新构建部署即可
     ```
-  - `v20260812.001`（commit `3b2a8c0`，**当前最新功能版**，版本号见 `src/config.ts` 的 `APP_VERSION`）：首屏体积优化——Word 解析（mammoth 及依赖）与 ZIP 导出（jszip）改为动态 import 懒加载，主 bundle 1.11MB → 620KB（gzip 325KB → 195KB），低频功能按需异步加载。
+  - `v20260812.002`（commit 待提交回填，**当前最新功能版**，版本号见 `src/config.ts` 的 `APP_VERSION`）：API Key 输入框不再触发 Chrome 密码管理器——imgbb Key / 模型 API KEY 由 `type="password"` 改为 `type="text"` + `autoComplete="off"` + CSS `-webkit-text-security` 视觉圆点隐藏，Chrome 不再弹出保存/新建密码建议。
+  - `v20260812.001`（commit `3b2a8c0`）：首屏体积优化——Word 解析（mammoth 及依赖）与 ZIP 导出（jszip）改为动态 import 懒加载，主 bundle 1.11MB → 620KB（gzip 325KB → 195KB），低频功能按需异步加载。
   - `v20260811.002`（commit `afd792e`）：手机端兼容优化——<480px 时 header 单行图标化（按钮只留图标、logo 只留 SVG、下拉只留头像）、Semi Modal 全宽、Markdown 编辑器标题栏自适应分行。
   - `v20260811.001`（commit `5a66f45`）：窄屏响应式优化——窗口 <1100px 时三栏由横排切换为纵向堆叠（消除横向滚动）；同日还含深色模式预览切换、模型保存双提示/Chrome 密码提示/Word 图片 alt 路径修复、Word 导入改用 convertToHtml 保真。
   - `v20260806.010`（commit `062bac9`）：空态手机框撑满预览区高度（三栏布局重构 v006→v010 的最终形态）。
@@ -235,6 +236,7 @@ scripts/            build-assets.mjs（打包 skill 资产）
 | v20260811.001 | 窄屏响应式优化（窗口 <1100px 时三栏由横排切换为纵向堆叠、每栏全宽，消除横向滚动）；深色模式预览切换（移植 wechatjs/mp-darkmode 算法）；修复模型保存双提示、Chrome 保存密码误提示、Word 图片 alt 带本地路径；Word 导入改用 convertToHtml 保真（富文本区显示真实加粗/标题样式）；富文本/预览标题栏窄屏自适应分行 |
 | v20260811.002 | 手机端兼容优化：<480px 时 header 单行图标化（按钮文字隐藏只留图标、logo 只留 SVG、模型下拉只留头像）、Semi Modal 全宽（`width: calc(100vw - 32px)`）、Markdown 编辑器标题栏自适应分行 |
 | v20260812.001 | **首屏体积优化**：Word 解析（mammoth 及 bluebird/@xmldom/dingbat/xmlbuilder 等依赖）与「分段贴图 ZIP 导出」的 jszip 改为**动态 import 懒加载**，仅在用户上传 Word / 导出贴图包时才下载对应 chunk；首屏主 bundle 由 1.11MB 降至约 620KB（gzip 325KB → 195KB），其余体积均转为按需异步 chunk，主界面加载与交互不变 |
+| v20260812.002 | **API Key 输入框不再触发 Chrome 密码管理器**：imgbb Key / 模型 API KEY 输入框由 `type="password"` 改为 `type="text"` + `autoComplete="off"` + CSS `-webkit-text-security` 视觉圆点隐藏，DOM 层面不是密码框，Chrome 不再弹出「保存密码」或「新建密码」建议（此前 `new-password` 会导致两者反复骚扰）；imgbb Key 的「显示/隐藏」切换保留 |
 
 > 每个版本均经真实浏览器（Chromium）挂载验证（无白屏、无报错）后，由 GitHub Actions 自动部署到 Cloudflare Pages。
 

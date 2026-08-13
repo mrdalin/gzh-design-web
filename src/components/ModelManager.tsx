@@ -198,8 +198,9 @@ export default function ModelManager({
       <div className={!draft.apiKey.trim() ? 'input-required' : ''}>
         <Input
           placeholder="API KEY"
-          type="password"
-          autoComplete="new-password"
+          type="text"
+          autoComplete="off"
+          className="key-visually-hidden"
           value={draft.apiKey}
           onChange={(v) => updateField('apiKey', v)}
           style={{ marginBottom: 10 }}

@@ -103,8 +103,9 @@ export default function ImgbbConfigModal({ visible, onClose, imgbbKey, expiry, o
       <Input
         style={{ marginTop: 8, marginBottom: 16 }}
         placeholder="粘贴你的 imgbb API Key"
-        type={showKey ? 'text' : 'password'}
-        autoComplete="new-password"
+        type="text"
+        autoComplete="off"
+        className={showKey ? undefined : 'key-visually-hidden'}
         value={key}
         onChange={(v) => setKey(v)}
         suffix={

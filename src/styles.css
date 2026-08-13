@@ -782,3 +782,10 @@ body {
   max-height: 360px;
   object-fit: contain;
 }
+
+/* API Key 输入框：视觉上用圆点隐藏字符（类似密码框），但 DOM 类型为 text，
+   避免 Chrome 密码管理器弹出保存密码/新建密码建议。 */
+.key-visually-hidden input {
+  -webkit-text-security: disc;
+  text-security: disc;
+}
