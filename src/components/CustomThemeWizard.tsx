@@ -12,10 +12,10 @@ import {
   Radio,
   Tag,
 } from '@douyinfe/semi-ui';
-import { IconChevronDown, IconTick, IconSetting, IconImage } from '@douyinfe/semi-icons';
+import { IconChevronDown, IconTick, IconSetting, IconImage, IconEdit } from '@douyinfe/semi-icons';
 import type { StoredModel } from '../types';
 import { generateTheme, generateThemeByImage } from '../lib/api';
-import { ModelAvatar, modelLabel } from '../modelIcons';
+import { ModelAvatar, modelLabel, isModelConfigured } from '../modelIcons';
 
 const { Text, Paragraph } = Typography;
 
@@ -25,6 +25,8 @@ interface Props {
   onApply: (html: string, name: string) => void;
   models: StoredModel[];
   selectedModelId: string;
+  /** 点击下拉中未配置的模型时触发（与顶部一致：打开模型管理弹窗），向导自身不修改全局选中模型 */
+  onManageModels?: () => void;
 }
 
 const STYLES = ['简约', '国潮', '商务', '清新', '科技', '文艺', '活泼'];
@@ -35,6 +37,7 @@ export default function CustomThemeWizard({
   onApply,
   models,
   selectedModelId,
+  onManageModels,
 }: Props) {
   const [style, setStyle] = useState('国潮');
   const [color, setColor] = useState('#C0392B');
@@ -183,18 +186,20 @@ export default function CustomThemeWizard({
 
       <Radio.Group
         type="button"
+        className="wizard-mode-switch"
         value={mode}
         onChange={(e: any) => {
           const v = e?.target?.value ?? e;
           setMode(v);
           if (v === 'text') setImageDataUrl('');
         }}
-        style={{ width: '100%', display: 'flex', marginBottom: 16 }}
       >
         <Radio value="text" style={{ flex: 1, textAlign: 'center' }}>
+          <IconEdit style={{ marginRight: 6, verticalAlign: '-2px' }} />
           文字描述生成主题
         </Radio>
         <Radio value="image" style={{ flex: 1, textAlign: 'center' }}>
+          <IconImage style={{ marginRight: 6, verticalAlign: '-2px' }} />
           上传参考图生成主题
         </Radio>
       </Radio.Group>
@@ -282,56 +287,73 @@ export default function CustomThemeWizard({
         </div>
       )}
 
-      <Space wrap align="center" style={{ marginBottom: 12 }}>
-        <Text>主题名称：</Text>
-        <Input style={{ width: 160 }} value={themeName} onChange={(v) => setThemeName(v)} />
-      </Space>
-
-      <Space wrap align="center" style={{ marginBottom: 12 }}>
-        <Text>生成模型：</Text>
-        <Dropdown
-          trigger="click"
-          position="bottomLeft"
-          className="model-select-dropdown"
-          content={
-            <div className="model-dropdown-menu">
-              {models.map((m) => {
-                const active = m.id === modelId;
-                return (
-                  <div
-                    key={m.id}
-                    className={`model-dropdown-item${active ? ' active' : ''}`}
-                    onClick={() => setModelId(m.id)}
-                  >
-                    <ModelAvatar model={m} size={26} />
-                    <span className="model-dropdown-name">{modelLabel(m)}</span>
-                    {m.vision && <Tag size="small" color="green" style={{ marginLeft: 6 }}>视觉</Tag>}
-                    {active && (
-                      <IconTick
-                        style={{ marginLeft: 'auto', color: 'var(--gzh-accent)', flexShrink: 0 }}
-                      />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          }
-        >
-          <Button theme="borderless" className="model-select-trigger">
-            {(() => {
-              const sel = models.find((m) => m.id === modelId);
-              return sel ? <ModelAvatar model={sel} size={22} /> : <IconSetting />;
-            })()}
-            <span className="model-select-label">
+      <div style={{ display: 'flex', gap: 16, marginBottom: 12, alignItems: 'center' }}>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+          <Text style={{ flexShrink: 0 }}>主题名称：</Text>
+          <Input style={{ flex: 1, minWidth: 0 }} value={themeName} onChange={(v) => setThemeName(v)} />
+        </div>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+          <Text style={{ flexShrink: 0 }}>生成模型：</Text>
+          <Dropdown
+            trigger="click"
+            position="bottomLeft"
+            className="model-select-dropdown"
+            style={{ flex: 1 }}
+            content={
+              <div className="model-dropdown-menu">
+                {models.map((m) => {
+                  const active = m.id === modelId;
+                  return (
+                    <div
+                      key={m.id}
+                      className={`model-dropdown-item${active ? ' active' : ''}`}
+                      onClick={() => {
+                        setModelId(m.id);
+                        if (!isModelConfigured(m)) {
+                          Toast.info('该模型尚未配置 API Key，请先点击 编辑 填写后使用');
+                          onManageModels?.();
+                        }
+                      }}
+                    >
+                      <ModelAvatar model={m} size={26} />
+                      <span className="model-dropdown-name">{modelLabel(m)}</span>
+                      {m.vision && <Tag size="small" color="green" style={{ marginLeft: 6 }}>识图</Tag>}
+                      {active && (
+                        <IconTick
+                          style={{ marginLeft: 'auto', color: 'var(--gzh-accent)', flexShrink: 0 }}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+                {onManageModels && (
+                  <>
+                    <Divider style={{ margin: '6px 0' }} />
+                    <div className="model-dropdown-item" onClick={() => onManageModels()}>
+                      <IconSetting style={{ color: 'var(--gzh-accent)', flexShrink: 0 }} />
+                      <span className="model-dropdown-name">管理模型 / 添加自定义</span>
+                    </div>
+                  </>
+                )}
+              </div>
+            }
+          >
+            <Button theme="borderless" className="model-select-trigger" style={{ width: '100%' }}>
               {(() => {
                 const sel = models.find((m) => m.id === modelId);
-                return sel ? modelLabel(sel) : '选择模型';
+                return sel ? <ModelAvatar model={sel} size={22} /> : <IconSetting />;
               })()}
-            </span>
-            <IconChevronDown />
-          </Button>
-        </Dropdown>
-      </Space>
+              <span className="model-select-label">
+                {(() => {
+                  const sel = models.find((m) => m.id === modelId);
+                  return sel ? modelLabel(sel) : '选择模型';
+                })()}
+              </span>
+              <IconChevronDown />
+            </Button>
+          </Dropdown>
+        </div>
+      </div>
 
       <Input
         placeholder="适用场景，如「数码产品评测」「个人成长随笔」"

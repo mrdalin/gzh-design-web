@@ -454,6 +454,37 @@ body {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* 自定义主题向导：两种生成方式的切换按钮组（平分宽度、选中态撑满格子、垂直居中） */
+.wizard-mode-switch {
+  width: 100%;
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  background: transparent;
+}
+.wizard-mode-switch .semi-radio-buttonRadioGroup {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+.wizard-mode-switch .semi-radio-addon-buttonRadio {
+  width: 100%;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 10px 0;
+  border-radius: 6px;
+}
+.wizard-mode-switch .semi-radio-addon-buttonRadio:hover {
+  background: var(--semi-color-fill-1);
+}
+.wizard-mode-switch .semi-radio-addon-buttonRadio-checked {
+  background: var(--gzh-accent);
+  color: #fff;
+}
 .model-dropdown-tag {
   flex-shrink: 0;
   font-size: 11px;

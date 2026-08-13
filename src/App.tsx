@@ -1102,6 +1102,7 @@ export default function App() {
         onApply={handleApplyCustom}
         models={models}
         selectedModelId={selectedModelId}
+        onManageModels={() => setModelVisible(true)}
       />
 
       <Modal
