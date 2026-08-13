@@ -159,7 +159,7 @@ scripts/            build-assets.mjs（打包 skill 资产）
     ```bash
     git checkout v20260806.004   # 检出后重新构建部署即可
     ```
-  - `v20260812.005`（commit 待提交回填，**当前最新功能版**，版本号见 `src/config.ts` 的 `APP_VERSION`）：代码复查修复——自定义主题向导模型下拉显示「视觉」标记（与模型管理一致）、向导打开时同步最新选中模型、参考图文件选择框重置 value 允许重复选同一张图。
+  - `v20260812.005`（commit `babf703`，**当前最新功能版**，版本号见 `src/config.ts` 的 `APP_VERSION`）：代码复查修复——自定义主题向导模型下拉显示「视觉」标记（与模型管理一致）、向导打开时同步最新选中模型、参考图文件选择框重置 value 允许重复选同一张图。
   - `v20260812.004`（commit `201d0f0`）：参考图生成主题——模型管理新增「支持视觉/多模态」勾选（列表显示「视觉」标记），自定义主题新增「上传参考图」创建方式（自动压缩后浏览器直连多模态模型生成完整主题，新增 `/api/theme-prompt` 取提示词、`generateThemeByImage` 直连），未勾选视觉的模型阻止生成并引导勾选。
   - `v20260812.003`（commit `c5070aa`）：功能统一——模型 API KEY 输入框增加「显示/隐藏」切换（与 imgbb Key 一致，默认圆点隐藏、可切换明文查看，打开/编辑时重置为隐藏）。
   - `v20260812.002`（commit `0ee5742`）：API Key 输入框不再触发 Chrome 密码管理器——imgbb Key / 模型 API KEY 由 `type="password"` 改为 `type="text"` + `autoComplete="off"` + CSS `-webkit-text-security` 视觉圆点隐藏，Chrome 不再弹出保存/新建密码建议。
