@@ -462,14 +462,26 @@ body {
   gap: 4px;
   margin-bottom: 16px;
   background: transparent;
+  padding: 0;
 }
+/* 选中态背景放在撑满格子的 label 上（semi-radio-buttonRadioGroup 带 flex:1） */
 .wizard-mode-switch .semi-radio-buttonRadioGroup {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 6px;
   padding: 0;
+  background: var(--semi-color-fill-0);
 }
+.wizard-mode-switch .semi-radio-buttonRadioGroup:hover {
+  background: var(--semi-color-fill-1);
+}
+.wizard-mode-switch .semi-radio-buttonRadioGroup.semi-radio-checked,
+.wizard-mode-switch .semi-radio-buttonRadioGroup.semi-radio-checked:hover {
+  background: var(--gzh-accent);
+}
+/* addon 只负责文字与图标，不承载背景（避免“只包内容宽度”与 hover 变白） */
 .wizard-mode-switch .semi-radio-addon-buttonRadio {
   width: 100%;
   text-align: center;
@@ -477,12 +489,19 @@ body {
   font-weight: 600;
   padding: 10px 0;
   border-radius: 6px;
+  background: transparent;
+  color: var(--semi-color-text-1);
 }
 .wizard-mode-switch .semi-radio-addon-buttonRadio:hover {
-  background: var(--semi-color-fill-1);
+  background: transparent;
 }
-.wizard-mode-switch .semi-radio-addon-buttonRadio-checked {
-  background: var(--gzh-accent);
+.wizard-mode-switch .semi-radio-buttonRadioGroup.semi-radio-checked .semi-radio-addon-buttonRadio,
+.wizard-mode-switch .semi-radio-buttonRadioGroup.semi-radio-checked:hover .semi-radio-addon-buttonRadio {
+  background: transparent;
+  color: #fff;
+}
+.wizard-mode-switch .semi-radio-buttonRadioGroup.semi-radio-checked .semi-icon,
+.wizard-mode-switch .semi-radio-buttonRadioGroup.semi-radio-checked:hover .semi-icon {
   color: #fff;
 }
 .model-dropdown-tag {

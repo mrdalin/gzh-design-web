@@ -52,6 +52,8 @@ export default function CustomThemeWizard({
   // 参考图 dataURL（压缩后），用于直连模型
   const [imageDataUrl, setImageDataUrl] = useState('');
   const [imgProcessing, setImgProcessing] = useState(false);
+  // 生成模型下拉是否展开（受控，点未配置模型后先收起再打开管理弹窗，避免遮挡）
+  const [modelDropdownOpen, setModelDropdownOpen] = useState(false);
 
   // 每次打开时同步最新选中的模型（组件常驻，visible 由外部控制）
   useEffect(() => {
@@ -126,7 +128,7 @@ export default function CustomThemeWizard({
     }
     if (mode === 'image') {
       if (!m.vision) {
-        Toast.warning('「参考图生成」需要支持图片的模型，请先在「模型管理」为该模型勾选「支持图片」');
+        Toast.warning('「参考图生成」需要支持识图的模型，请先在「模型管理」为支持识图的该模型勾选「支持图片」后选择该模型');
         return;
       }
       if (!imageDataUrl) {
@@ -299,6 +301,8 @@ export default function CustomThemeWizard({
             position="bottomLeft"
             className="model-select-dropdown"
             style={{ flex: 1 }}
+            visible={modelDropdownOpen}
+            onVisibleChange={(v: boolean) => setModelDropdownOpen(v)}
             content={
               <div className="model-dropdown-menu">
                 {models.map((m) => {
@@ -309,6 +313,7 @@ export default function CustomThemeWizard({
                       className={`model-dropdown-item${active ? ' active' : ''}`}
                       onClick={() => {
                         setModelId(m.id);
+                        setModelDropdownOpen(false);
                         if (!isModelConfigured(m)) {
                           Toast.info('该模型尚未配置 API Key，请先点击 编辑 填写后使用');
                           onManageModels?.();
@@ -329,7 +334,13 @@ export default function CustomThemeWizard({
                 {onManageModels && (
                   <>
                     <Divider style={{ margin: '6px 0' }} />
-                    <div className="model-dropdown-item" onClick={() => onManageModels()}>
+                    <div
+                      className="model-dropdown-item"
+                      onClick={() => {
+                        setModelDropdownOpen(false);
+                        onManageModels();
+                      }}
+                    >
                       <IconSetting style={{ color: 'var(--gzh-accent)', flexShrink: 0 }} />
                       <span className="model-dropdown-name">管理模型 / 添加自定义</span>
                     </div>
