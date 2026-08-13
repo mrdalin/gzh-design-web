@@ -224,6 +224,14 @@ export default function ModelManager({
           }
         />
       </div>
+      <div className={!draft.model.trim() ? 'input-required' : ''}>
+        <Input
+          placeholder="模型名称，如 deepseek-chat"
+          value={draft.model}
+          onChange={(v) => updateField('model', v)}
+          style={{ marginBottom: 10 }}
+        />
+      </div>
       <Checkbox
         checked={!!draft.vision}
         onChange={(e: any) => updateField('vision', !!(e?.target?.checked ?? e))}
@@ -234,14 +242,6 @@ export default function ModelManager({
           （参考图生成主题需要）
         </Text>
       </Checkbox>
-      <div className={!draft.model.trim() ? 'input-required' : ''}>
-        <Input
-          placeholder="模型名称，如 deepseek-chat"
-          value={draft.model}
-          onChange={(v) => updateField('model', v)}
-          style={{ marginBottom: 12 }}
-        />
-      </div>
 
       <Space>
         <Button theme="solid" icon={editingId ? undefined : <IconPlus />} onClick={() => saveDraft(false)}>

@@ -49,19 +49,19 @@ const DEFAULT_MODELS: StoredModel[] = [
     preset: true,
   },
   {
-    id: 'glm',
-    displayName: '智谱 GLM',
-    baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
-    apiKey: '',
-    model: 'glm-4-flash',
-    preset: true,
-  },
-  {
     id: 'qwen',
     displayName: '通义千问',
     baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
     apiKey: '',
     model: 'qwen-plus',
+    preset: true,
+  },
+  {
+    id: 'glm',
+    displayName: '智谱 GLM',
+    baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
+    apiKey: '',
+    model: 'glm-4-flash',
     preset: true,
   },
 ];

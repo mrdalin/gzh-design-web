@@ -95,28 +95,29 @@ export default function App() {
   const [imgbbExpiry, setImgbbExpiry] = useState(0);
 
   // GitHub 仓库 Star 数（用于顶栏「Star」按钮展示，失败则只显示 Star 不显示数字）。
-  const [starCount, setStarCount] = useState<number | null>(null);
-  useEffect(() => {
-    if (!REPO_URL) return;
-    const m = REPO_URL.match(/github\.com\/([^/]+)\/([^/]+)/);
-    if (!m) return;
-    const api = `https://api.github.com/repos/${m[1]}/${m[2]}`;
-    fetch(api)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d: unknown) => {
-        if (
-          d &&
-          typeof d === 'object' &&
-          'stargazers_count' in d &&
-          typeof (d as { stargazers_count?: unknown }).stargazers_count === 'number'
-        ) {
-          setStarCount((d as { stargazers_count: number }).stargazers_count);
-        }
-      })
-      .catch(() => {
-        /* 网络/限流失败时静默，仅显示 Star 不显示数字 */
-      });
-  }, [REPO_URL]);
+  // 注：Star 按钮已暂时隐藏（见 header JSX 注释块），此状态与拉取逻辑一并停用。
+  // const [starCount, setStarCount] = useState<number | null>(null);
+  // useEffect(() => {
+  //   if (!REPO_URL) return;
+  //   const m = REPO_URL.match(/github\.com\/([^/]+)\/([^/]+)/);
+  //   if (!m) return;
+  //   const api = `https://api.github.com/repos/${m[1]}/${m[2]}`;
+  //   fetch(api)
+  //     .then((r) => (r.ok ? r.json() : null))
+  //     .then((d: unknown) => {
+  //       if (
+  //         d &&
+  //         typeof d === 'object' &&
+  //         'stargazers_count' in d &&
+  //         typeof (d as { stargazers_count?: unknown }).stargazers_count === 'number'
+  //       ) {
+  //         setStarCount((d as { stargazers_count: number }).stargazers_count);
+  //       }
+  //     })
+  //     .catch(() => {
+  //       /* 网络/限流失败时静默，仅显示 Star 不显示数字 */
+  //     });
+  // }, [REPO_URL]);
 
   // 界面主题色（按钮/链接/选中边框等主色），默认公众号绿，用户可在右上角切换并持久化。
   const [colorTheme, setColorTheme] = useState(getStoredThemeId());
@@ -224,8 +225,9 @@ export default function App() {
   const currentModel = models.find((x) => x.id === selectedModelId);
 
   function handleThemeSelect(id: string) {
-    if (id === 'custom' && !customLib) {
-      // 尚未生成过自定义主题：直接打开向导引导生成，不额外弹 Toast
+    if (id === 'custom') {
+      // 点击「自定义主题」卡片统一进入向导：未生成则引导生成，已生成可重新生成/修改，
+      // 应用成功后自动选中（handleApplyCustom 里 setSelectedThemeId('custom')）。
       setWizardVisible(true);
       return;
     }
@@ -874,6 +876,7 @@ export default function App() {
               <span className="header-btn-text">排版历史</span>
             </Button>
           )}
+          {/* Star 按钮暂隐藏，回头需要了再开启
           {REPO_URL && (
             <Button
               className="header-action-btn"
@@ -890,6 +893,7 @@ export default function App() {
               </span>
             </Button>
           )}
+          */}
           <Badge dot={!imgbbKey?.trim()} type="danger" position="rightTop">
             <Button className="header-action-btn" icon={<IconImage />} onClick={() => setImgbbVisible(true)}>
               <span className="header-btn-text">图片 API</span>
@@ -909,7 +913,6 @@ export default function App() {
         customActive={customActive}
         customName={customThemeName}
         onSelect={handleThemeSelect}
-        onOpenWizard={() => setWizardVisible(true)}
       />
 
       {wordParsing && (

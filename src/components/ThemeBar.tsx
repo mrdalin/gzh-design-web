@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Button, Space, Tag, Typography } from '@douyinfe/semi-ui';
-import { IconPlus } from '@douyinfe/semi-icons';
 import type { Theme } from '../types';
 
 const { Text } = Typography;
@@ -24,7 +23,6 @@ interface Props {
   customActive: boolean;
   customName: string;
   onSelect: (id: string) => void;
-  onOpenWizard: () => void;
 }
 
 export default function ThemeBar({
@@ -33,7 +31,6 @@ export default function ThemeBar({
   customActive,
   customName,
   onSelect,
-  onOpenWizard,
 }: Props) {
   const [hoveredTheme, setHoveredTheme] = useState<Theme | null>(null);
   const [hoverRect, setHoverRect] = useState<DOMRect | null>(null);
@@ -87,10 +84,6 @@ export default function ThemeBar({
               <div className="theme-bar-scenario">你在向导里生成的风格</div>
             </div>
           </div>
-
-          <Button icon={<IconPlus />} onClick={onOpenWizard}>
-            自定义主题
-          </Button>
         </Space>
       </div>
 

@@ -86,7 +86,14 @@ export default function HistoryDrawer({
       <div className={`drawer-mask ${visible ? 'open' : ''}`} onClick={onClose} />
       <aside className={`drawer-panel ${visible ? 'open' : ''}`} aria-hidden={!visible}>
         <div className="drawer-header">
-          <Text strong>排版历史（{items.length}）</Text>
+          <div>
+            <Text strong>排版历史（{items.length}）</Text>
+            <div style={{ marginTop: 2 }}>
+              <Text type="tertiary" size="small">
+                每次排版渲染成功后自动保存，点击预览可回看效果
+              </Text>
+            </div>
+          </div>
           <Button theme="borderless" icon={<IconClose />} onClick={onClose} aria-label="关闭" />
         </div>
 
