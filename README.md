@@ -159,7 +159,7 @@ scripts/            build-assets.mjs（打包 skill 资产）
     ```bash
     git checkout v20260806.004   # 检出后重新构建部署即可
     ```
-  - `v20260812.001`（commit 待部署后回填，**当前最新功能版**，版本号见 `src/config.ts` 的 `APP_VERSION`）：首屏体积优化——Word 解析（mammoth 及依赖）与 ZIP 导出（jszip）改为动态 import 懒加载，主 bundle 1.11MB → 620KB（gzip 325KB → 195KB），低频功能按需异步加载。
+  - `v20260812.001`（commit `3b2a8c0`，**当前最新功能版**，版本号见 `src/config.ts` 的 `APP_VERSION`）：首屏体积优化——Word 解析（mammoth 及依赖）与 ZIP 导出（jszip）改为动态 import 懒加载，主 bundle 1.11MB → 620KB（gzip 325KB → 195KB），低频功能按需异步加载。
   - `v20260811.002`（commit `afd792e`）：手机端兼容优化——<480px 时 header 单行图标化（按钮只留图标、logo 只留 SVG、下拉只留头像）、Semi Modal 全宽、Markdown 编辑器标题栏自适应分行。
   - `v20260811.001`（commit `5a66f45`）：窄屏响应式优化——窗口 <1100px 时三栏由横排切换为纵向堆叠（消除横向滚动）；同日还含深色模式预览切换、模型保存双提示/Chrome 密码提示/Word 图片 alt 路径修复、Word 导入改用 convertToHtml 保真。
   - `v20260806.010`（commit `062bac9`）：空态手机框撑满预览区高度（三栏布局重构 v006→v010 的最终形态）。
