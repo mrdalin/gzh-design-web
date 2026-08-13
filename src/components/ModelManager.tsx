@@ -9,6 +9,7 @@ import {
   Divider,
   Tag,
   Popconfirm,
+  Checkbox,
 } from '@douyinfe/semi-ui';
 import { IconPlus, IconDelete, IconRefresh, IconTick } from '@douyinfe/semi-icons';
 import type { StoredModel } from '../types';
@@ -43,6 +44,7 @@ function emptyCustom(): StoredModel {
     baseUrl: '',
     apiKey: '',
     model: '',
+    vision: false,
   };
 }
 
@@ -66,8 +68,8 @@ export default function ModelManager({
     }
   }, [visible]);
 
-  function updateField(field: keyof StoredModel, v: string) {
-    setDraft((d) => ({ ...d, [field]: v }));
+  function updateField(field: keyof StoredModel, v: string | boolean) {
+    setDraft((d) => ({ ...d, [field]: v } as StoredModel));
   }
 
   function saveDraft(useAfter = false) {
@@ -160,6 +162,7 @@ export default function ModelManager({
               <span>
                 <b>{isModelConfigured(m) ? (m.model || m.displayName) : (m.displayName || m.model)}</b>
                 {m.preset && <Tag size="small" color="blue" style={{ marginLeft: 6 }}>预设</Tag>}
+                {m.vision && <Tag size="small" color="green" style={{ marginLeft: 6 }}>视觉</Tag>}
                 {m.preset && !m.apiKey && PRESET_API_URLS[m.id] && (
                   <a
                     href={PRESET_API_URLS[m.id]}
@@ -221,6 +224,16 @@ export default function ModelManager({
           }
         />
       </div>
+      <Checkbox
+        checked={!!draft.vision}
+        onChange={(e: any) => updateField('vision', !!(e?.target?.checked ?? e))}
+        style={{ marginBottom: 12 }}
+      >
+        <span>支持视觉 / 多模态</span>
+        <Text type="tertiary" size="small" style={{ marginLeft: 6 }}>
+          （参考图生成主题需要视觉模型，勾选后可选作生成模型）
+        </Text>
+      </Checkbox>
       <div className={!draft.model.trim() ? 'input-required' : ''}>
         <Input
           placeholder="模型名称，如 deepseek-chat"

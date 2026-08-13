@@ -520,3 +520,87 @@ export async function generateArticle(
   if (!res.ok) throw new Error(data.error || '文案生成失败');
   return data;
 }
+
+/**
+ * 参考图生成主题（浏览器直连多模态模型）：
+ * 前端先取 theme-generator.md 提示词，再把参考图(base64)与偏好一起直连模型，
+ * 不走 Cloudflare Functions 中转（图片体积大 + 30s CPU 限制）。
+ * 参考图格式为 OpenAI 兼容的 content 数组 + image_url(dataURL)。
+ */
+export async function generateThemeByImage(
+  prefs: { desc: string; scene?: string; extra?: string },
+  imageDataUrl: string,
+  model: ModelConfig
+): Promise<{ html: string }> {
+  // 1) 取 theme-generator.md 提示词（纯文本，轻量 GET，不触 LLM）
+  let generator = '';
+  try {
+    const g = await fetch('/api/theme-prompt');
+    if (g.ok) {
+      const gd = (await g.json()) as any;
+      generator = gd?.prompt || '';
+    }
+  } catch {
+    /* 取不到则走下面兜底提示词 */
+  }
+  const system = `${
+    generator || '你是一个专业的微信公众号文章主题 Block 设计生成器，根据参考图与用户偏好生成一套排版组件库。'
+  }\n\n你只输出区块库 HTML（连续排布的所有 Block），不要解释、不要用 markdown 代码块围栏包裹。`;
+
+  const userText = [
+    '请分析这张参考图的配色、风格、场景、版式等视觉特征，并据此生成一套完整的公众号文章排版主题组件库。',
+    prefs.desc ? `用户对主题的补充描述：${prefs.desc}` : '',
+    prefs.scene ? `适用场景：${prefs.scene}` : '',
+    prefs.extra ? `其他要求：${prefs.extra}` : '',
+    '请按【生成提示词】要求，产出 45~75 个 Block 的完整区块库 HTML，全部区块在同一页面连续排布，方便整页浏览确认风格。',
+  ]
+    .filter(Boolean)
+    .join('\n');
+
+  const base = model.baseUrl.replace(/\/+$/, '');
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 120_000);
+  let resp: Response;
+  try {
+    resp = await fetch(`${base}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${model.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: model.model,
+        messages: [
+          { role: 'system', content: system },
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: userText },
+              { type: 'image_url', image_url: { url: imageDataUrl } },
+            ],
+          },
+        ],
+        temperature: 0.7,
+        max_tokens: 32768,
+        stream: false,
+      }),
+      signal: controller.signal,
+    });
+  } catch (err: any) {
+    clearTimeout(timer);
+    if (err.name === 'AbortError') throw new Error('模型响应超时（120秒），请重试或换更快的模型');
+    throw new Error(`无法连接模型服务（${err?.message || '网络错误'}）`);
+  }
+  clearTimeout(timer);
+  if (!resp.ok) {
+    const errText = await resp.text().catch(() => '');
+    throw new Error(`LLM 请求失败（${resp.status}）: ${errText.slice(0, 300)}`);
+  }
+  const data: any = await resp.json();
+  const raw = data?.choices?.[0]?.message?.content ?? '';
+  if (!raw || !raw.trim()) {
+    throw new Error('模型返回空内容。该模型可能不支持视觉输入，请确认已在模型管理中勾选「支持视觉/多模态」');
+  }
+  let html = String(raw).trim().replace(/^```(?:html)?\s*/i, '').replace(/\s*```$/i, '').trim();
+  return { html };
+}

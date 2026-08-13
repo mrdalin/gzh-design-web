@@ -44,4 +44,6 @@ export interface HistoryItem {
 export interface StoredModel extends ModelConfig {
   id: string;
   preset?: boolean;
+  /** 该模型是否支持视觉/多模态(参考图生成主题时需要) */
+  vision?: boolean;
 }
