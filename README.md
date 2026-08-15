@@ -96,34 +96,95 @@ npm run dev
 
 ```
 src/
-├── components/        React 组件
-│   ├── App.tsx              主应用（三栏布局、状态管理、界面主色注入）
-│   ├── RichEditor.tsx       富文本编辑器（contentEditable）
-│   ├── MarkdownEditor.tsx   Markdown 编辑器 + 工具栏
-│   ├── EditorToolbar.tsx    编辑器工具栏（格式化按钮 / 上传）
-│   ├── PreviewPanel.tsx     手机预览区（流式显示 / 复制 / 导出）
-│   ├── ThemeBar.tsx         文章主题选择栏
-│   ├── HistoryDrawer.tsx    排版历史抽屉
-│   ├── ModelManager.tsx     模型配置弹窗
-│   ├── ImgbbConfigModal.tsx 图片 API 配置弹窗
-│   └── CustomThemeWizard.tsx 自定义主题向导
-├── colorThemes.ts      界面主题色预设（橙红/蓝/绿/黑 4 套）+ 运行时注入逻辑（含 favicon 跟随）
+├── main.tsx                  入口（ReactDOM 挂载）
+├── App.tsx                   主应用（三栏布局、状态管理、界面主色注入、顶栏/下拉/向导编排）
+├── components/               React 组件
+│   ├── RichEditor.tsx        富文本编辑器（contentEditable）
+│   ├── MarkdownEditor.tsx    Markdown 编辑器 + 工具栏
+│   ├── EditorToolbar.tsx     编辑器工具栏（格式化按钮 / 上传）
+│   ├── PreviewPanel.tsx      手机预览区（流式显示 / 复制 / 导出 / 深色切换）
+│   ├── ThemeBar.tsx          文章主题选择栏（含自定义主题卡片）
+│   ├── ThemeSelect.tsx       主题下拉选择
+│   ├── HistoryDrawer.tsx     排版历史抽屉
+│   ├── ModelManager.tsx      模型管理弹窗（增删改、预设、支持图片勾选）
+│   ├── ImgbbConfigModal.tsx  图片 API（imgbb）配置弹窗
+│   └── CustomThemeWizard.tsx 自定义主题向导（文字描述 / 上传参考图 两种方式）
+├── colorThemes.ts            界面主题色预设（橙红/蓝/绿/黑 4 套）+ 运行时注入逻辑（含 favicon 跟随）
+├── modelIcons.tsx            模型品牌头像 / 标签 / isModelConfigured / modelLabel
 ├── lib/
-│   ├── api.ts               API 客户端（流式布局 / 图片上传 / 校验）
-│   ├── htmlToMarkdown.ts    HTML → Markdown 转换
-│   ├── markdownToHtml.ts    Markdown → HTML 转换（手写轻量）
-│   ├── storage.ts           localStorage 封装（模型 / 历史 / 草稿）
-│   ├── clipboard.ts         富文本剪贴板操作
-│   ├── wordCount.ts         字数统计
-│   ├── htmlToImage.ts       截图（html-to-image）
-│   └── useScrollSync.ts     三栏联动滚动 hook
-├── types.ts                 TypeScript 类型定义
-├── config.ts                应用配置（版本号 / 仓库地址）
-└── styles.css               全局样式
-functions/          Cloudflare Pages Functions
-worker-lib/         Worker 共享逻辑（资产 / 校验脚本 / LLM 客户端 / 主题解析）
-scripts/            build-assets.mjs（打包 skill 资产）
+│   ├── api.ts                API 客户端（流式排版 / 直连 imgbb / 主题生成 / generateThemeByImage）
+│   ├── storage.ts            localStorage 封装（模型 / 历史 / 草稿 / 自定义主题）
+│   ├── clipboard.ts          富文本剪贴板操作
+│   ├── htmlToMarkdown.ts     HTML → Markdown 转换
+│   ├── markdownToHtml.ts     Markdown → HTML 转换（手写轻量）
+│   ├── imageSanitize.ts      Word 图片 alt / 本地路径清洗
+│   ├── htmlToImage.ts        截图（html-to-image，vendored）
+│   ├── wordCount.ts          字数统计
+│   ├── useScrollSync.ts      三栏联动滚动 hook
+│   └── darkmode/             深色模式算法（移植 wechatjs/mp-darkmode：color / strategy / index）
+├── types.ts                  TypeScript 类型定义（含 StoredModel.vision 等）
+├── config.ts                 应用配置（版本号 APP_VERSION / 仓库地址 REPO_URL）
+├── styles.css                全局样式
+└── vendor/html-to-image/     截图库（vendored，随仓库提交）
+functions/api/                Cloudflare Pages Functions（均为备用/校验，主路径浏览器直连）
+│   ├── themes.ts             内置主题列表
+│   ├── theme.ts              主题生成（文字描述模式，经服务端转发）
+│   ├── theme-prompt.ts       返回 theme-generator.md 提示词（参考图直连模式取用）
+│   ├── layout.ts             排版（备用，非主路径）
+│   ├── postprocess.ts        排版后处理合规校验
+│   ├── generate.ts           文案生成
+│   └── upload.ts             ⚠️ DEPRECATED 已废弃（前端不再调用，仅供回溯）
+worker-lib/                   Worker 共享逻辑
+│   ├── skillAssets.ts        AUTO-GENERATED（scripts/build-assets.mjs 打包，随仓库提交，CI 不重生成）
+│   ├── llm.ts                LLM chatCompletion（Functions 用）
+│   ├── themes.ts             主题组件库
+│   ├── validate.ts           主题/排版合规校验
+│   ├── componentLint.ts      组件 lint
+│   ├── layoutStyle.ts        样式计算
+│   └── extractDocx.ts        Word 解析（服务端备用）
+scripts/
+└── build-assets.mjs          打包 skill 资产脚本（仅更新 skill 时运行）
+.github/workflows/deploy.yml  GitHub Actions 自动部署（push main → build → wrangler pages deploy）
+wrangler.toml                 Cloudflare Pages 配置（pages_build_output_dir = dist）
+vite.config.ts                Vite 构建配置
+tsconfig.json                 TypeScript 配置（include: src, functions, worker-lib）
+index.html                    前端入口 HTML
+public/                       静态资源（favicon 等）
+AGENTS.md                     Agent 规则文件（AI 开发者必读，发布必做清单在此）
+开发部署范本.md                项目从需求→开发→部署的完整范本（复刻参考）
 ```
+
+## 接手 / 维护须知（快速上手）
+
+### 环境
+- **Node ≥ 22**（CI 用 22，本地实测 24 可用）；`npm install` 后即可开发。
+- 工具链：Vite + React 18 + TS(strict) + Semi Design 2.101.1 + Cloudflare Pages Functions + wrangler。
+
+### 日常开发（不涉及后端）
+```bash
+npm run dev         # 前端 dev server → http://localhost:5173
+npm run typecheck   # tsc --noEmit；提交前必须零错误
+npm run build       # vite build → dist/
+```
+完整本地（含 /api）：`npm run build` 后 `npm run pages:dev`。
+
+### ⚠️ 发布必做（每次 push main 之前逐条检查，AGENTS.md 同源）
+1. `src/config.ts` 的 `APP_VERSION` **必须 +1**（同日序号 +1，跨日重置为当天日期 `.001`）——历史已漏 2 次，用户强约束。
+2. README「更新历程」表补一行本次版本改动；稳定锚点「当前最新功能版」同步到新版本与 commit。
+3. `npm run typecheck` 零错误 + `npm run build` 成功。
+4. push main 即触发 GitHub Actions 自动部署到 Cloudflare Pages（https://wwwx.eu.cc），凭证在 Actions secrets，无需本地。
+
+### 关键改动点（改前必读）
+- **模型直连 vs 服务端**：主路径是浏览器直连（LLM SSE / imgbb），Functions 只是备用与校验；新增外部调用先确认第三方是否开放 CORS。
+- **自定义主题两种方式**：文字描述走 `/api/theme`（服务端转发）；参考图走浏览器直连 `generateThemeByImage`（先 GET `/api/theme-prompt` 取提示词），**必须勾选「支持图片」的视觉模型**（`StoredModel.vision`），否则拦截。
+- **API Key 输入框**：必须是 `type="text"` + `autoComplete="off"` + `key-visually-hidden` 圆点隐藏，不能改回 `type="password"`（否则 Chrome 弹保存/新建密码建议，历史教训）。
+- **skillAssets.ts 是生成产物**：不要手改；更新 skill 资产走 `npm run build:assets`。
+
+### 已知限制（有意保留）
+- `npm audit` 9 个漏洞（3 moderate / 6 high）——来自 wrangler 开发链，升级是破坏性的，维持现状。
+- Word 导入的右对齐会随 AI 排版主题化重排（已知限制，暂不处理）。
+- 顶栏「Star」按钮已注释隐藏（代码保留，需要时打开）。
+
 
 ## 两类「主题」的区别
 
@@ -194,7 +255,7 @@ scripts/            build-assets.mjs（打包 skill 资产）
   - `v20260805.026`（commit `d6eb949`）：早期稳定版（3 套界面色、模型下拉显模型名、必填项红框、历史角标等）。
 - 完整变更历程见下方「更新历程」。
 
-### 更新历程（v20260805.006 → v20260812.001）
+### 更新历程（v20260805.006 → v20260812.011）
 
 | 版本 | 关键改动 |
 |------|---------|

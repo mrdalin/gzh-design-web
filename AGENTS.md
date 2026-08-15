@@ -36,7 +36,7 @@ Node ≥ 22（CI 用 22，本地实测 24 可用）。
 3. `npm run typecheck` 零错误 + `npm run build` 成功。
 
 ## 当前状态与下一步
-- 当前版本 v20260811.002（`src/config.ts` 的 `APP_VERSION`，每日重置，发布时手动 +1），线上 https://wwwx.eu.cc 运行中。
-- 本地与远端同步于 `afd792e`（版本号补升至 20260811.002，对应手机端兼容优化）。最近交付：窄屏响应式（<1100px 三栏纵向堆叠）、手机端兼容（<480px header 单行图标化 + Modal 全宽）、深色模式切换、模型保存双提示/Chrome 密码提示/Word 图片 alt 路径修复、Word 导入改用 convertToHtml 保真、富文本/预览/Markdown 标题栏自适应分行。
-- 已知：`npm audit` 报 9 个漏洞（3 moderate / 6 high，依赖上游现状，未处理）；Word 导入的
-  右对齐为已知限制（AI 排版会主题化重排，暂不处理）。
+- 当前版本 v20260812.011（`src/config.ts` 的 `APP_VERSION`，每日重置，发布时手动 +1），线上 https://wwwx.eu.cc 运行中（live verified）。
+- 本地与远端同步于 `32a2ffa`（main 分支，工作树干净）。最近交付链：参考图生成主题 + 模型「支持图片」标记、自定义主题向导（文字描述/上传参考图两方式、切换按钮/布局/下拉交互多轮打磨）、API Key 输入框不再触发 Chrome 密码管理器、模型 API KEY 显示/隐藏切换、首屏体积优化（mammoth/jszip 动态 import）、通义千问开通地址更新为百炼控制台、预设模型顺序调整、Star 按钮暂隐藏。
+- 已知：`npm audit` 报 9 个漏洞（3 moderate / 6 high，依赖上游现状，未处理）；Word 导入的右对齐为已知限制（AI 排版会主题化重排，暂不处理）。
+- stateless / 无服务端密钥：BYOK 全在浏览器 localStorage，Cloudflare 侧零密钥，接手机无需任何迁移。
