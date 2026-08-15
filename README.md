@@ -215,7 +215,7 @@ npm run build       # vite build → dist/
 ## 版本与回退
 
 - 当前版本号见 `src/config.ts` 的 `APP_VERSION`（格式 `YYYYMMDD.00X`，每日重置，硬刷新生效）。
-- **稳定锚点（均已打 git tag，可随时回退）**：
+- **稳定锚点（标注以下 commit hash，可 `git checkout <commit>` 回退）**：
   - `v20260806.004`（commit `9672e09`）：**上传可用基线（仍推荐）**。图片上传改为**浏览器直连 imgbb**（`https://api.imgbb.com/1/upload`，原字节 FormData、免 base64），彻底解决之前经 Cloudflare Functions 代理 `/api/upload` 上传必 502 的问题（CF 出口 fetch 到 api.imgbb.com 被平台层整体拦截，与代码无关）。**这是首个能正常上传图片的版本**（v005 起在其基础上增强多图限流，上传持续可用）；imgbb 错误码中文细分提示也随之前置到前端。
     ```bash
     git checkout v20260806.004   # 检出后重新构建部署即可
